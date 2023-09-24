@@ -23,6 +23,16 @@ typedef enum exp_type_t {
   EXP_INSTRUCTION = 1,
 } exp_type_t;
 
+typedef enum directive_t {
+  DIR_INCLUDE,
+  DIR_NULLPAD,
+  DIR_BYTE,
+  DIR_BYTES,
+  DIR_PADDING,
+  DIR_TEXT,
+  DIR_SYMBOLS,
+} directive_t;
+
 typedef enum inst_t {
   INST_LD  = 0x00,
   INST_ST  = 0x01,
@@ -57,7 +67,7 @@ typedef struct asm_exp_t {
 typedef struct asm_tree_t {
   size_t     exp_count;
   asm_exp_t *asm_exp;
-}
+} asm_tree_t;
 
 typedef struct asm_res_t {
   uint32_t line;
