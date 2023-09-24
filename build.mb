@@ -1,0 +1,15 @@
+sector .config
+  fields mariebuild:
+    str bin_name 'tasm'
+
+    str src 'src/'
+    str out 'out/'
+
+    list files 'log.c:main.c'
+
+    str std_flags     '-Wall -Isrc/ -c -o'
+    str debug_flags   '-ggdb'
+    str release_flags '-O3'
+
+    str comp_cmd     'clang $(mode_flags) $(std_flags) out/$(file).o src/$(file)'
+    str finalize_cmd 'clang $(mode_flags) out/$(files).o -o $(bin_name) -lm'
