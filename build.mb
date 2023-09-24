@@ -5,7 +5,7 @@ sector .config
     str src 'src/'
     str out 'out/'
 
-    list files 'log.c:main.c'
+    list files 'log.c:assembler.c:main.c'
 
     str std_flags     '-Wall -Isrc/ -c -o'
     str debug_flags   '-ggdb'

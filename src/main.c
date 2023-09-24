@@ -3,7 +3,7 @@
  * Copyright (c) 2023, Marie Eckert
  */
 
-//#include <assembler.h>
+#include <assembler.h>
 #include <log.h>
 
 #include <stdio.h>
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   struct arguments args;
   args.in = NULL;
   args.out = "asm.out";
-  args.format = "rom";//TASM_OUT_ROM;
+  args.format = TASM_OUT_ROM;
   
   argp_parse(&argp, argc, argv, 0, 0, &args);
 
@@ -57,6 +57,5 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  return 0;
-  //return asm_write_file(args.in, arg.out, args.format);
+  return asm_write_file(args.in, args.out, args.format);
 }
