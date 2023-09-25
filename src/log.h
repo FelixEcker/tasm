@@ -5,7 +5,7 @@
 #define ANSI_RESET ESC "[0m"
 #define ANSI_GRAY ESC "[90m"
 #define ANSI_GREEN ESC "[32m"
-#define ANSI_ORANGE ESC "[91m"
+#define ANSI_ORANGE ESC "[33m"
 #define ANSI_RED ESC "[31m"
 
 #define LOG_PREFIX_DBG ANSI_GRAY "[*]"
