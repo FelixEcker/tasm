@@ -14,6 +14,7 @@ typedef enum err_t {
   TASM_MISSING_PARAMETER,
   TASM_INVALID_DIRECTIVE,
   TASM_DIRECTIVE_MISSING_PARAMETER,
+  TASM_STRING_NOT_CLOSED,
 } err_t;
 
 //-- Assembly Keywords / Tokens / Values --//
@@ -101,10 +102,14 @@ typedef struct asm_res_t {
 
 //-- Functions --//
 
+char *asm_errname(err_t err);
+
+err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword, char **params);
+
 err_t asm_parse_line(asm_tree_branch_t *branch, char *line);
 
 err_t asm_parse_file(char *src_fl, asm_tree_t *ast);
 
-int asm_write_file(char *src_fl, char *out_fl, char *format);
+err_t asm_write_file(char *src_fl, char *out_fl, char *format);
 
 #endif
