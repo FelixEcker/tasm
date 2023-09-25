@@ -78,4 +78,6 @@ char *str_replace(char *orig, char *rep, char *with);
  * */
 char *trim_whitespace(char *str);
 
+char *convert_escape_sequences(const char *input);
+
 #endif

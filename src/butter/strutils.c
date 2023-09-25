@@ -150,3 +150,125 @@ char *trim_whitespace(char *str) {
 
   return str;
 }
+
+char *convert_escape_sequences(const char *input) {
+  if (input == NULL) {
+    return NULL; // Handle NULL input gracefully
+  }
+
+  // Allocate memory for the output string, assuming the worst case scenario
+  // where every character is an escape sequence
+  char *output = (char *)malloc((strlen(input) * 4 + 1) * sizeof(char));
+
+  if (output == NULL) {
+    return NULL; // Memory allocation failed
+  }
+
+  int outputIndex = 0;
+  int inputIndex = 0;
+
+  while (input[inputIndex] != '\0') {
+    if (input[inputIndex] == '\\') {
+      // Check for escape sequences
+      switch (input[inputIndex + 1]) {
+      case 'a':
+        output[outputIndex++] = '\a'; // Bell (alert)
+        inputIndex += 2;
+        break;
+      case 'b':
+        output[outputIndex++] = '\b'; // Backspace
+        inputIndex += 2;
+        break;
+      case 'f':
+        output[outputIndex++] = '\f'; // Form feed
+        inputIndex += 2;
+        break;
+      case 'n':
+        output[outputIndex++] = '\n'; // Newline
+        inputIndex += 2;
+        break;
+      case 'r':
+        output[outputIndex++] = '\r'; // Carriage return
+        inputIndex += 2;
+        break;
+      case 't':
+        output[outputIndex++] = '\t'; // Tab
+        inputIndex += 2;
+        break;
+      case 'v':
+        output[outputIndex++] = '\v'; // Vertical tab
+        inputIndex += 2;
+        break;
+      case '\\':
+        output[outputIndex++] = '\\'; // Backslash
+        inputIndex += 2;
+        break;
+      case '\"':
+        output[outputIndex++] = '\"'; // Double quote
+        inputIndex += 2;
+        break;
+      case '\'':
+        output[outputIndex++] = '\''; // Single quote
+        inputIndex += 2;
+        break;
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+        // Octal escape sequence
+        {
+          char octal[4] = "000";
+          int j = 0;
+
+          while (input[inputIndex + 1] >= '0' && input[inputIndex + 1] <= '7' &&
+                 j < 3) {
+            octal[j++] = input[inputIndex + 1];
+            inputIndex++;
+          }
+
+          octal[j] = '\0';
+          int value = strtol(octal, NULL, 8);
+          output[outputIndex++] = (char)value;
+          inputIndex++;
+        }
+        break;
+      case 'x':
+        // Hexadecimal escape sequence
+        {
+          char hex[3] = "00";
+          int j = 0;
+
+          while (
+              ((input[inputIndex + 1] >= '0' && input[inputIndex + 1] <= '9') ||
+               (input[inputIndex + 1] >= 'a' && input[inputIndex + 1] <= 'f') ||
+               (input[inputIndex + 1] >= 'A' &&
+                input[inputIndex + 1] <= 'F')) &&
+              j < 2) {
+            hex[j++] = input[inputIndex + 1];
+            inputIndex++;
+          }
+
+          hex[j] = '\0';
+          int value = strtol(hex, NULL, 16);
+          output[outputIndex++] = (char)value;
+          inputIndex++;
+        }
+        break;
+      default:
+        // Invalid escape sequence, treat it as a regular character
+        output[outputIndex++] = input[inputIndex++];
+        break;
+      }
+    } else {
+      // Regular character, copy it as is
+      output[outputIndex++] = input[inputIndex++];
+    }
+  }
+
+  output[outputIndex] = '\0'; // Null-terminate the output string
+  return output;
+}
