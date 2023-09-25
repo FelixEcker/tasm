@@ -1,13 +1,13 @@
 #ifndef ASSEMBLER_H
 #define ASSEMBLER_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define TASM_OUT_ROM "rom"
 #define TASM_OUT_TEF "tef"
 
-#define TASM_RESULT_ALLOC 0x40
+#define TASM_CHAR_COMMENT ';'
 
 typedef enum err_t {
   TASM_OK = 0,
@@ -34,8 +34,8 @@ typedef enum directive_t {
 } directive_t;
 
 typedef enum inst_t {
-  INST_LD  = 0x00,
-  INST_ST  = 0x01,
+  INST_LD = 0x00,
+  INST_ST = 0x01,
   INST_BRN = 0x02,
   INST_BEQ = 0x02,
   INST_BNE = 0x02,
@@ -46,7 +46,7 @@ typedef enum inst_t {
   INST_INT = 0x07,
   INST_DIN = 0x08,
   INST_EIN = 0x09,
-  INST_OR  = 0x0a,
+  INST_OR = 0x0a,
   INST_AND = 0x0b,
   INST_INC = 0x0c,
   INST_DEC = 0x0d,
@@ -58,21 +58,28 @@ typedef enum inst_t {
 } inst_t;
 
 typedef struct asm_exp_t {
-  exp_type_t    type;
-  inst_t        inst;
-  directive_t   directive;
-  char        **parameters;
+  uint32_t line;
+  exp_type_t type;
+  inst_t inst;
+  directive_t directive;
+  char **parameters;
 } asm_exp_t;
 
-typedef struct asm_tree_t {
-  size_t     exp_count;
+typedef struct asm_tree_branch_t {
+  size_t exp_count;
   asm_exp_t *asm_exp;
+  char *file;
+} asm_tree_branch_t;
+
+typedef struct asm_tree_t {
+  size_t branch_count;
+  asm_tree_branch_t *branches;
 } asm_tree_t;
 
 typedef struct asm_res_t {
   uint32_t line;
-  err_t    status;
-  size_t   result_size;
+  err_t status;
+  size_t result_size;
   uint8_t *result;
 } asm_res_t;
 

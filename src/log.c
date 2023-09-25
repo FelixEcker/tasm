@@ -1,8 +1,8 @@
 #include <log.h>
 
-#include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void log_dbg(const char *format, ...) {
   printf("%s ", LOG_PREFIX_DBG);
@@ -43,4 +43,3 @@ void log_err(const char *format, ...) {
   va_end(arg);
   printf(ANSI_RESET);
 }
-

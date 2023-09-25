@@ -5,7 +5,9 @@ sector .config
     str src 'src/'
     str out 'out/'
 
-    list files 'log.c:assembler.c:main.c'
+    list butter 'butter/strutils.c'
+    list app    'log.c:assembler.c:main.c:'
+    list files '$(butter):$(app)'
 
     str std_flags     '-Wall -Isrc/ -c -o'
     str debug_flags   '-ggdb'
