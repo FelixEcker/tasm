@@ -11,7 +11,8 @@
 
 //-- Static Utilities --//
 
-static uint8_t _handle_err(err_t err, char *file, char *line, uint32_t linenum) {
+static uint8_t _handle_err(err_t err, char *file, char *line,
+                           uint32_t linenum) {
   log_err("Assembly failed!\n");
   log_err("%s\n", asm_errname(err));
   log_err("%s:%lu: %s\n", file, linenum, line);
@@ -20,15 +21,15 @@ static uint8_t _handle_err(err_t err, char *file, char *line, uint32_t linenum) 
 
 static uint8_t _str_closed(char *str) {
   size_t len = strlen(str);
-  
+
   if (len == 1) {
     return str[0] == TASM_CHAR_STRING_CONT;
   } else if (len == 0) {
     return 1;
   }
 
-  return (str[len-1] == TASM_CHAR_STRING_CONT
-      && str[len-2] != TASM_CHAR_ESCAPE);
+  return (str[len - 1] == TASM_CHAR_STRING_CONT &&
+          str[len - 2] != TASM_CHAR_ESCAPE);
 }
 
 static uint8_t _parse_str_tok(char **dest, char *tok) {
@@ -41,11 +42,11 @@ static uint8_t _parse_str_tok(char **dest, char *tok) {
 
   uint8_t is_end = _str_closed(tokcpy);
   if (is_end) {
-    tokcpy[strlen(tokcpy)-1] = 0;
+    tokcpy[strlen(tokcpy) - 1] = 0;
   }
 
   char *fmt_tok = convert_escape_sequences(tokcpy);
-  
+
   // Assemble new string
   char whitespace[] = " ";
   char *new = malloc(strlen(dest[0]) + strlen(fmt_tok) + 2);
@@ -72,7 +73,8 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword, char **params) {
   if (branch->exp_count == 0) {
     branch->asm_exp = malloc(sizeof(asm_exp_t));
   } else {
-    branch->asm_exp = realloc(branch->asm_exp, sizeof(asm_exp_t) * (branch->exp_count + 1));
+    branch->asm_exp =
+        realloc(branch->asm_exp, sizeof(asm_exp_t) * (branch->exp_count + 1));
   }
 
   branch->exp_count++;
@@ -141,7 +143,7 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line) {
       goto parse_line_cleanup;
     } else {
       size_t len = strlen(parameters[parameter_count - 1]);
-      parameters[parameter_count - 1][len-1] = 0;
+      parameters[parameter_count - 1][len - 1] = 0;
     }
   }
 
@@ -187,7 +189,7 @@ err_t asm_write_file(char *src_fl, char *out_fl, char *format) {
   log_inf("Assembling \"%s\"\n", src_fl);
   log_inf("Step 1: Parsing Sources\n");
   asm_tree_t ast;
-  
+
   err_t err = asm_parse_file(src_fl, &ast);
   if (err != TASM_OK)
     goto asm_write_file_cleanup;
