@@ -7,8 +7,6 @@
 #define TASM_OUT_ROM "rom"
 #define TASM_OUT_TEF "tef"
 
-#define TASM_CHAR_COMMENT ';'
-
 typedef enum err_t {
   TASM_OK = 0,
   TASM_INVALID_INSTRUCTION,
@@ -18,10 +16,17 @@ typedef enum err_t {
   TASM_DIRECTIVE_MISSING_PARAMETER,
 } err_t;
 
-typedef enum exp_type_t {
-  EXP_DIRECTIVE = 0,
-  EXP_INSTRUCTION = 1,
-} exp_type_t;
+//-- Assembly Keywords / Tokens / Values --//
+
+#define TASM_CHAR_COMMENT          ';'
+#define TASM_CHAR_DIRECTIVE_PREFIX '.'
+#define TASM_CHAR_STRING_CONT      '"'
+#define TASM_CHAR_ESCAPE           '\\'
+#define TASM_CHAR_DECIMAL_POSTFIX  't'
+#define TASM_CHAR_BINARY_POSTFIX   'b'
+
+#define TASM_STR_ADDRESS_PREFIX    "$"
+#define TASM_STR_VALUE_PREFIX      "$#"
 
 typedef enum directive_t {
   DIR_INCLUDE,
@@ -57,11 +62,22 @@ typedef enum inst_t {
   INST_NOP = 0x39,
 } inst_t;
 
+//typedef enum inst_sizes_t {
+//} inst_sizes_t;
+
+//-- Assembler Tree Datatypes --//
+
+typedef enum exp_type_t {
+  EXP_DIRECTIVE = 0,
+  EXP_INSTRUCTION = 1,
+} exp_type_t;
+
 typedef struct asm_exp_t {
   uint32_t line;
   exp_type_t type;
   inst_t inst;
   directive_t directive;
+  size_t parameter_count;
   char **parameters;
 } asm_exp_t;
 
@@ -83,7 +99,11 @@ typedef struct asm_res_t {
   uint8_t *result;
 } asm_res_t;
 
-asm_res_t asm_asm(char *src);
+//-- Functions --//
+
+err_t asm_parse_line(asm_tree_branch_t *branch, char *line);
+
+err_t asm_parse_file(char *src_fl, asm_tree_t *ast);
 
 int asm_write_file(char *src_fl, char *out_fl, char *format);
 
