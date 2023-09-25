@@ -7,17 +7,17 @@
 #include <errno.h>
 #include <string.h>
 
-/*asm_res_t asm_asm(char *src, asm_ctx_t ctx) {
-  asm_res_t res;
-  res.line = 1;
-  res.status = TASM_OK;
-  res.result_size = 0;
-  res.result = malloc(TASM_RESULT_ALLOC);
 
-  return res;
-}*/
+static uint8_t _handle_err(err_t err, char *line, uint32_t linenum) {
 
-int asm_write_file(char *src_fl, char *out_fl, char *format) {
+  return 0;
+}
+
+err_t asm_parse_line(asm_tree_t *ast, char *line, uint32_t linenum) {
+  return TASM_OK;
+}
+
+err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
   FILE *file;
   char *line = NULL;
   size_t len = 0;
@@ -31,11 +31,26 @@ int asm_write_file(char *src_fl, char *out_fl, char *format) {
     return 1;
   }
 
+  log_inf("Assembling \"%s\"\n", src_fl);
+  log_inf("Step 1: Parsing Sources\n");
+  
+  err_t err;
   while ((read = getline(&line, &len, file)) != -1) {
     linenum++;
-    printf("%s", line);
+    err = asm_parse_line(ast, line, linenum);
+    if (err != TASM_OK)
+      if (_handle_err(err, line, linenum) == 0)
+        goto parse_file_cleanup;
   }
 
-  return 0;
-//  return res.status;
+parse_file_cleanup:
+  fclose(file);
+  return err;
+}
+
+int asm_write_file(char *src_fl, char *out_fl, char *format) {
+  asm_tree_t ast;
+  err_t parse_err = asm_parse_file(src_fl, &ast);
+
+  return parse_err;
 }
