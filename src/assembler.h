@@ -19,6 +19,7 @@ typedef enum err_t {
 
 //-- Assembly Keywords / Tokens / Values --//
 
+#define TASM_CHAR_PARAM_SEPERATOR ','
 #define TASM_CHAR_COMMENT ';'
 #define TASM_CHAR_DIRECTIVE_PREFIX '.'
 #define TASM_CHAR_STRING_CONT '"'

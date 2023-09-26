@@ -67,6 +67,14 @@ static uint8_t _parse_str_tok(char **dest, char *tok) {
 
 //-- Assembly Funcs --//
 
+directive_t get_dir(char *str) {
+  return DIR_TEXT;
+}
+
+inst_t get_inst(char *str) {
+  return INST_LD;
+}
+
 err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
                     size_t param_count, char **params) {
   err_t ret = TASM_OK;
@@ -81,6 +89,13 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
   branch->asm_exp[branch->exp_count].parameter_count = param_count;
   branch->asm_exp[branch->exp_count].parameters = params;
 
+  branch->asm_exp[branch->exp_count].type = EXP_INSTRUCTION;
+  if (keyword[0] == TASM_CHAR_DIRECTIVE_PREFIX) {
+    branch->asm_exp[branch->exp_count].type = EXP_DIRECTIVE;
+    branch->asm_exp[branch->exp_count].directive = get_dir(keyword+1);
+  } else {
+    branch->asm_exp[branch->exp_count].inst = get_inst(keyword);
+  }
   branch->exp_count++;
 
   return ret;
@@ -133,6 +148,8 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line) {
       parameters[parameter_count] = strdup(tok + 1);
     } else {
       parameters[parameter_count] = strdup(tok);
+      if (tok[strlen(tok)-1] == TASM_CHAR_PARAM_SEPERATOR)
+        parameters[parameter_count][strlen(tok)-1] = 0;
     }
 
     parameter_count++;
@@ -214,10 +231,13 @@ asm_write_file_cleanup:
   for (int i = 0; i < ast.branch_count; i++) {
     for (int j = 0; j < ast.branches[i].exp_count; j++) {
       size_t param_count = ast.branches[i].asm_exp[j].parameter_count;
-      for (int k = 0; k < param_count; k++)
+      for (int k = 0; k < param_count; k++) {
         free(ast.branches[i].asm_exp[j].parameters[k]);
+      }
+
       free(ast.branches[i].asm_exp[j].parameters);
     }
+
     free(ast.branches[i].asm_exp);
   }
   free(ast.branches);
