@@ -67,8 +67,8 @@ static uint8_t _parse_str_tok(char **dest, char *tok) {
 
 //-- Assembly Funcs --//
 
-err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword, size_t param_count,
-                    char **params) {
+err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
+                    size_t param_count, char **params) {
   err_t ret = TASM_OK;
 
   if (branch->exp_count == 0) {
@@ -91,7 +91,7 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line) {
   char *linecpy = strdup(line);
 
   char *keyword = NULL;
-  
+
   // Trim whitespace
   char *clean_line = trim_whitespace(linecpy);
   if (clean_line[0] == TASM_CHAR_COMMENT)
@@ -181,7 +181,8 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
   if (ast->branch_count == 1) {
     ast->branches = malloc(sizeof(asm_tree_branch_t));
   } else {
-    ast->branches = realloc(ast->branches, sizeof(asm_tree_branch_t) * ast->branch_count);
+    ast->branches =
+        realloc(ast->branches, sizeof(asm_tree_branch_t) * ast->branch_count);
   }
 
   err_t err;

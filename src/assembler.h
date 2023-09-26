@@ -19,15 +19,15 @@ typedef enum err_t {
 
 //-- Assembly Keywords / Tokens / Values --//
 
-#define TASM_CHAR_COMMENT          ';'
+#define TASM_CHAR_COMMENT ';'
 #define TASM_CHAR_DIRECTIVE_PREFIX '.'
-#define TASM_CHAR_STRING_CONT      '"'
-#define TASM_CHAR_ESCAPE           '\\'
-#define TASM_CHAR_DECIMAL_POSTFIX  't'
-#define TASM_CHAR_BINARY_POSTFIX   'b'
+#define TASM_CHAR_STRING_CONT '"'
+#define TASM_CHAR_ESCAPE '\\'
+#define TASM_CHAR_DECIMAL_POSTFIX 't'
+#define TASM_CHAR_BINARY_POSTFIX 'b'
 
-#define TASM_STR_ADDRESS_PREFIX    "$"
-#define TASM_STR_VALUE_PREFIX      "$#"
+#define TASM_STR_ADDRESS_PREFIX "$"
+#define TASM_STR_VALUE_PREFIX "$#"
 
 typedef enum directive_t {
   DIR_INCLUDE,
@@ -63,8 +63,8 @@ typedef enum inst_t {
   INST_NOP = 0x39,
 } inst_t;
 
-//typedef enum inst_sizes_t {
-//} inst_sizes_t;
+// typedef enum inst_sizes_t {
+// } inst_sizes_t;
 
 //-- Assembler Tree Datatypes --//
 
@@ -104,8 +104,8 @@ typedef struct asm_res_t {
 
 char *asm_errname(err_t err);
 
-err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword, size_t parma_count,
-    char **params);
+err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
+                    size_t parma_count, char **params);
 
 err_t asm_parse_line(asm_tree_branch_t *branch, char *line);
 
