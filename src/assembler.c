@@ -67,7 +67,8 @@ static uint8_t _parse_str_tok(char **dest, char *tok) {
 
 //-- Assembly Funcs --//
 
-err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword, char **params) {
+err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword, size_t param_count,
+                    char **params) {
   err_t ret = TASM_OK;
 
   if (branch->exp_count == 0) {
@@ -76,6 +77,9 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword, char **params) {
     branch->asm_exp =
         realloc(branch->asm_exp, sizeof(asm_exp_t) * (branch->exp_count + 1));
   }
+
+  branch->asm_exp[branch->exp_count].parameter_count = param_count;
+  branch->asm_exp[branch->exp_count].parameters = params;
 
   branch->exp_count++;
 
@@ -86,6 +90,8 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line) {
   err_t ret = TASM_OK;
   char *linecpy = strdup(line);
 
+  char *keyword = NULL;
+  
   // Trim whitespace
   char *clean_line = trim_whitespace(linecpy);
   if (clean_line[0] == TASM_CHAR_COMMENT)
@@ -96,7 +102,6 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line) {
   if (tok == NULL)
     goto parse_line_cleanup;
 
-  char *keyword = NULL;
   size_t parameter_count = 0;
   char **parameters = NULL;
 
@@ -147,9 +152,11 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line) {
     }
   }
 
-  ret = asm_parse_exp(branch, keyword, parameters);
+  ret = asm_parse_exp(branch, keyword, parameter_count, parameters);
 parse_line_cleanup:
   free(linecpy);
+  if (keyword != NULL)
+    free(keyword);
   return ret;
 }
 
@@ -170,6 +177,12 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
   log_inf("Parsing \"%s\"\n", src_fl);
 
   // Create new tree branch for this file
+  ast->branch_count++;
+  if (ast->branch_count == 1) {
+    ast->branches = malloc(sizeof(asm_tree_branch_t));
+  } else {
+    ast->branches = realloc(ast->branches, sizeof(asm_tree_branch_t) * ast->branch_count);
+  }
 
   err_t err;
   while ((read = getline(&line, &len, file)) != -1) {
@@ -181,6 +194,7 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
   }
 
 parse_file_cleanup:
+  free(line);
   fclose(file);
   return err;
 }
@@ -189,12 +203,23 @@ err_t asm_write_file(char *src_fl, char *out_fl, char *format) {
   log_inf("Assembling \"%s\"\n", src_fl);
   log_inf("Step 1: Parsing Sources\n");
   asm_tree_t ast;
+  ast.branch_count = 0;
 
   err_t err = asm_parse_file(src_fl, &ast);
   if (err != TASM_OK)
     goto asm_write_file_cleanup;
 
 asm_write_file_cleanup:
+  for (int i = 0; i < ast.branch_count; i++) {
+    for (int j = 0; j < ast.branches[i].exp_count; j++) {
+      size_t param_count = ast.branches[i].asm_exp[j].parameter_count;
+      for (int k = 0; k < param_count; k++)
+        free(ast.branches[i].asm_exp[j].parameters[k]);
+      free(ast.branches[i].asm_exp[j].parameters);
+    }
+    free(ast.branches[i].asm_exp);
+  }
+  free(ast.branches);
   return err;
 }
 

@@ -104,7 +104,8 @@ typedef struct asm_res_t {
 
 char *asm_errname(err_t err);
 
-err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword, char **params);
+err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword, size_t parma_count,
+    char **params);
 
 err_t asm_parse_line(asm_tree_branch_t *branch, char *line);
 
