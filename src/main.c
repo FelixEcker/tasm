@@ -22,8 +22,9 @@ static struct argp_option options[] = {
     {"in", 'i', "FILE", 0, "Specify the input assembly source"},
     {"out", 'o', "FILE", 0, "Specify the output filename"},
     {"format", 'f', "rom/tef", 0, "Specify the output format (default=rom)"},
-    {"search-dirs", 's', "DIRßCOTRY", 0, "Specify a colon seperated list of "
-      "directories to search through for included files"},
+    {"search-dirs", 's', "DIRßCOTRY", 0,
+     "Specify a colon seperated list of "
+     "directories to search through for included files"},
     {0, 0, 0, 0}};
 
 struct arguments {
@@ -64,7 +65,7 @@ int main(int argc, char **argv) {
   args.format = TASM_OUT_ROM;
 
   argp_parse(&argp, argc, argv, 0, 0, &args);
-  
+
   printf("%s by " AUTHOR "\n\n", argp_program_version);
 
   if (args.in == NULL) {

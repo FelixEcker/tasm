@@ -129,9 +129,9 @@ typedef struct asm_res_t {
 //- Assembling Functions -//
 
 err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
-                    size_t parma_count, char **params);
+                    size_t parma_count, char **params, uint32_t line);
 
-err_t asm_parse_line(asm_tree_branch_t *branch, char *line);
+err_t asm_parse_line(asm_tree_branch_t *branch, char *line, uint32_t line_num);
 
 err_t asm_parse_file(char *src_fl, asm_tree_t *ast);
 

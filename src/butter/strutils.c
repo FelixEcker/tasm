@@ -274,7 +274,7 @@ char *convert_escape_sequences(const char *input) {
 }
 
 char *str_upper(char *str) {
-  char *ret = malloc(strlen(str)+1);
+  char *ret = malloc(strlen(str) + 1);
 
   size_t sz = strlen(str);
   for (size_t i = 0; i < sz; i++)
@@ -285,7 +285,7 @@ char *str_upper(char *str) {
 }
 
 char *str_lower(char *str) {
-  char *ret = malloc(strlen(str)+1);
+  char *ret = malloc(strlen(str) + 1);
 
   size_t sz = strlen(str);
   for (size_t i = 0; i < sz; i++)

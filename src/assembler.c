@@ -31,9 +31,9 @@ static size_t _dir_exp_size(asm_exp_t exp) {
   case DIR_NULLPAD:
     if (exp.parameters == NULL || exp.parameters[0] == NULL)
       return 0;
-    
+
     char *pend;
-    return (size_t) strtol(exp.parameters[0], &pend, 0);
+    return (size_t)strtol(exp.parameters[0], &pend, 0);
   case DIR_BYTE:
     return 1;
   default:
@@ -51,6 +51,16 @@ static size_t _get_inst_size(inst_t inst) {
   return 0;
 }
 
+static size_t _get_inst_param_count(inst_t inst) {
+  for (int i = 0; i < INST_COUNT; i++) {
+    if (inst_descriptors[i].inst == inst) {
+      return inst_descriptors[i].param_count;
+    }
+  }
+
+  return 0;
+}
+
 static size_t _precalc_size(asm_tree_t *ast) {
   size_t ret = 0;
 
@@ -60,11 +70,10 @@ static size_t _precalc_size(asm_tree_t *ast) {
     for (size_t e = 0; e < branch.exp_count; e++) {
       asm_exp_t exp = branch.asm_exp[e];
       if (exp.type != EXP_INSTRUCTION) {
-        if (exp.directive != DIR_NULLPAD
-        &&  exp.directive != DIR_BYTE
-        &&  exp.directive != DIR_BYTES)
+        if (exp.directive != DIR_NULLPAD && exp.directive != DIR_BYTE &&
+            exp.directive != DIR_BYTES)
           continue;
-      
+
         ret += _dir_exp_size(exp);
         continue;
       }
@@ -133,7 +142,7 @@ static uint8_t _parse_str_tok(char **dest, char *tok) {
 //-- Assembly Funcs --//
 
 err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
-                    size_t param_count, char **params) {
+                    size_t param_count, char **params, uint32_t line) {
   err_t ret = TASM_OK;
 
   if (branch->exp_count == 0) {
@@ -143,6 +152,7 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
         realloc(branch->asm_exp, sizeof(asm_exp_t) * (branch->exp_count + 1));
   }
 
+  branch->asm_exp[branch->exp_count].line = line;
   branch->asm_exp[branch->exp_count].parameter_count = param_count;
   branch->asm_exp[branch->exp_count].parameters = params;
 
@@ -150,10 +160,10 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
   if (keyword[0] == TASM_CHAR_DIRECTIVE_PREFIX) {
     branch->asm_exp[branch->exp_count].type = EXP_DIRECTIVE;
     branch->asm_exp[branch->exp_count].directive = get_dir(keyword + 1);
-  } else if (keyword[strlen(keyword)-1] == TASM_CHAR_LABEL_POSTFIX) {
+  } else if (keyword[strlen(keyword) - 1] == TASM_CHAR_LABEL_POSTFIX) {
     branch->asm_exp[branch->exp_count].type = EXP_LABEL;
     branch->asm_exp[branch->exp_count].parameter_count = 1;
-    branch->asm_exp[branch->exp_count].parameters = malloc(sizeof(char*));
+    branch->asm_exp[branch->exp_count].parameters = malloc(sizeof(char *));
     branch->asm_exp[branch->exp_count].parameters[0] = strdup(keyword);
   } else {
     branch->asm_exp[branch->exp_count].inst = get_inst(keyword);
@@ -163,7 +173,7 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
   return ret;
 }
 
-err_t asm_parse_line(asm_tree_branch_t *branch, char *line) {
+err_t asm_parse_line(asm_tree_branch_t *branch, char *line, uint32_t line_num) {
   err_t ret = TASM_OK;
   char *linecpy = strdup(line);
 
@@ -231,7 +241,7 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line) {
     }
   }
 
-  ret = asm_parse_exp(branch, keyword, parameter_count, parameters);
+  ret = asm_parse_exp(branch, keyword, parameter_count, parameters, line_num);
 parse_line_cleanup:
   free(linecpy);
   if (keyword != NULL)
@@ -266,11 +276,12 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
   }
 
   ast->branches[branch_ix].exp_count = 0;
+  ast->branches[branch_ix].file = src_fl;
 
   err_t err;
   while ((read = getline(&line, &len, file)) != -1) {
     linenum++;
-    err = asm_parse_line(&ast->branches[branch_ix], line);
+    err = asm_parse_line(&ast->branches[branch_ix], line, linenum);
     if (err != TASM_OK)
       if (_handle_err(err, src_fl, line, linenum) == 0)
         goto parse_file_cleanup;
@@ -280,14 +291,11 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
   for (size_t i = 0; i < exp_count; i++) {
     if (ast->branches[branch_ix].asm_exp[i].type != EXP_DIRECTIVE)
       continue;
-    if (ast->branches[branch_ix].asm_exp[i].directive !=
-        DIR_INCLUDE)
+    if (ast->branches[branch_ix].asm_exp[i].directive != DIR_INCLUDE)
       continue;
 
-    err = _do_dir_include(
-        ast,
-        ast->branches[branch_ix].asm_exp[i].parameters,
-        ast->branches[branch_ix].asm_exp[i].parameter_count);
+    err = _do_dir_include(ast, ast->branches[branch_ix].asm_exp[i].parameters,
+                          ast->branches[branch_ix].asm_exp[i].parameter_count);
 
     if (err != TASM_OK)
       break;
@@ -312,7 +320,7 @@ err_t asm_resolve_labels(asm_tree_t *ast) {
         if (exp->type == EXP_DIRECTIVE) {
           offset += _dir_exp_size(*exp);
           continue;
-        } 
+        }
 
         offset += _get_inst_size(exp->inst);
         continue;
@@ -339,6 +347,27 @@ err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
   dest_ptr[0] = malloc(calcd_size);
   size[0] = calcd_size;
 
+  asm_tree_branch_t *branch;
+  asm_exp_t *exp;
+  for (size_t b = 0; b < ast->branch_count; b++) {
+    branch = &ast->branches[b];
+
+    for (size_t e = 0; e < branch->exp_count; e++) {
+      exp = &branch->asm_exp[e];
+      if (exp->type != EXP_INSTRUCTION)
+        continue;
+
+      if (exp->parameter_count != _get_inst_param_count(exp->inst)) {
+        ret = TASM_INVALID_PARAMETER;
+        goto asm_translate_tree_exit;
+      }
+    }
+  }
+
+asm_translate_tree_exit:
+  if (ret != TASM_OK) {
+    _handle_err(ret, branch->file, "?", exp->line);
+  }
   return ret;
 }
 
@@ -425,23 +454,23 @@ struct inst_elem_t {
 inst_descriptor_t inst_descriptors[INST_COUNT] = {
     {.name = "ld", .inst = INST_LD, .size = 3, .param_count = 2},
     {.name = "st", .inst = INST_ST, .size = 3, .param_count = 2},
-    {.name = "brn", .inst = INST_BRN, .size = 3, .param_count = 1}, 
+    {.name = "brn", .inst = INST_BRN, .size = 3, .param_count = 1},
     {.name = "beq", .inst = INST_BEQ, .size = 3, .param_count = 1},
     {.name = "bne", .inst = INST_BNE, .size = 3, .param_count = 1},
     {.name = "cmp", .inst = INST_CMP, .size = 3, .param_count = 1},
-    {.name = "cal", .inst = INST_CAL, .size = 3, .param_count = 1}, 
+    {.name = "cal", .inst = INST_CAL, .size = 3, .param_count = 1},
     {.name = "rts", .inst = INST_RTS, .size = 1, .param_count = 0},
-    {.name = "rti", .inst = INST_RTI, .size = 1, .param_count = 0}, 
+    {.name = "rti", .inst = INST_RTI, .size = 1, .param_count = 0},
     {.name = "int", .inst = INST_INT, .size = 1, .param_count = 0},
-    {.name = "din", .inst = INST_DIN, .size = 1, .param_count = 0}, 
+    {.name = "din", .inst = INST_DIN, .size = 1, .param_count = 0},
     {.name = "ein", .inst = INST_EIN, .size = 1, .param_count = 0},
-    {.name = "or", .inst = INST_OR, .size = 4, .param_count = 2},   
+    {.name = "or", .inst = INST_OR, .size = 4, .param_count = 2},
     {.name = "and", .inst = INST_AND, .size = 4, .param_count = 2},
-    {.name = "inc", .inst = INST_INC, .size = 4, .param_count = 2}, 
+    {.name = "inc", .inst = INST_INC, .size = 4, .param_count = 2},
     {.name = "dec", .inst = INST_DEC, .size = 4, .param_count = 2},
-    {.name = "add", .inst = INST_ADD, .size = 4, .param_count = 2}, 
+    {.name = "add", .inst = INST_ADD, .size = 4, .param_count = 2},
     {.name = "sub", .inst = INST_SUB, .size = 4, .param_count = 2},
-    {.name = "shr", .inst = INST_SHR, .size = 4, .param_count = 2}, 
+    {.name = "shr", .inst = INST_SHR, .size = 4, .param_count = 2},
     {.name = "shl", .inst = INST_SHL, .size = 4, .param_count = 2},
     {.name = "nop", .inst = INST_NOP, .size = 1, .param_count = 0},
 };
