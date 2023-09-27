@@ -24,6 +24,14 @@ static uint8_t _handle_err(err_t err, char *file, char *line,
   return 0;
 }
 
+static err_t _do_dir_include(asm_tree_t *ast, char **params,
+                             size_t param_count) {
+  if (param_count < 1)
+    return TASM_DIRECTIVE_MISSING_PARAMETER;
+
+  return asm_parse_file(params[0], ast);
+}
+
 static uint8_t _str_closed(char *str) {
   size_t len = strlen(str);
 
@@ -191,6 +199,7 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
   log_inf("Parsing \"%s\"\n", src_fl);
 
   // Create new tree branch for this file
+  size_t branch_ix = ast->branch_count;
   ast->branch_count++;
   if (ast->branch_count == 1) {
     ast->branches = malloc(sizeof(asm_tree_branch_t));
@@ -199,15 +208,32 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
         realloc(ast->branches, sizeof(asm_tree_branch_t) * ast->branch_count);
   }
 
-  ast->branches[ast->branch_count - 1].exp_count = 0;
+  ast->branches[branch_ix].exp_count = 0;
 
   err_t err;
   while ((read = getline(&line, &len, file)) != -1) {
     linenum++;
-    err = asm_parse_line(&ast->branches[ast->branch_count - 1], line);
+    err = asm_parse_line(&ast->branches[branch_ix], line);
     if (err != TASM_OK)
       if (_handle_err(err, src_fl, line, linenum) == 0)
         goto parse_file_cleanup;
+  }
+
+  size_t exp_count = ast->branches[branch_ix].exp_count;
+  for (size_t i = 0; i < exp_count; i++) {
+    if (ast->branches[branch_ix].asm_exp[i].type != EXP_DIRECTIVE)
+      continue;
+    if (ast->branches[branch_ix].asm_exp[i].directive !=
+        DIR_INCLUDE)
+      continue;
+
+    err = _do_dir_include(
+        ast,
+        ast->branches[branch_ix].asm_exp[i].parameters,
+        ast->branches[branch_ix].asm_exp[i].parameter_count);
+
+    if (err != TASM_OK)
+      break;
   }
 
 parse_file_cleanup:
