@@ -20,12 +20,15 @@ static struct argp_option options[] = {
     {"in", 'i', "FILE", 0, "Specify the input assembly source"},
     {"out", 'o', "FILE", 0, "Specify the output filename"},
     {"format", 'f', "rom/tef", 0, "Specify the output format (default=rom)"},
+    {"search-dirs", 's', "DIRßCOTRY", 0, "Specify a colon seperated list of "
+      "directories to search through for included files"},
     {0, 0, 0, 0}};
 
 struct arguments {
   char *in;
   char *out;
   char *format;
+  char *search_dirs;
 };
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
@@ -39,6 +42,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     break;
   case 'f':
     args->format = arg;
+    break;
+  case 's':
+    args->search_dirs = arg;
     break;
   default:
     return ARGP_ERR_UNKNOWN;

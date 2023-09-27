@@ -24,6 +24,58 @@ static uint8_t _handle_err(err_t err, char *file, char *line,
   return 0;
 }
 
+static size_t _dir_exp_size(asm_exp_t exp) {
+  switch (exp.directive) {
+  case DIR_BYTES:
+  case DIR_PADDING:
+  case DIR_NULLPAD:
+    if (exp.parameters == NULL || exp.parameters[0] == NULL)
+      return 0;
+    
+    char *pend;
+    return (size_t) strtol(exp.parameters[0], &pend, 0);
+  case DIR_BYTE:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+static size_t _get_inst_size(inst_t inst) {
+  for (int i = 0; i < INST_COUNT; i++) {
+    if (inst_descriptors[i].inst == inst) {
+      return inst_descriptors[i].size;
+    }
+  }
+
+  return 0;
+}
+
+static size_t _precalc_size(asm_tree_t *ast) {
+  size_t ret = 0;
+
+  for (size_t b = 0; b < ast->branch_count; b++) {
+    asm_tree_branch_t branch = ast->branches[b];
+
+    for (size_t e = 0; e < branch.exp_count; e++) {
+      asm_exp_t exp = branch.asm_exp[e];
+      if (exp.type != EXP_INSTRUCTION) {
+        if (exp.directive != DIR_NULLPAD
+        &&  exp.directive != DIR_BYTE
+        &&  exp.directive != DIR_BYTES)
+          continue;
+      
+        ret += _dir_exp_size(exp);
+        continue;
+      }
+
+      ret += _get_inst_size(exp.inst);
+    }
+  }
+
+  return ret;
+}
+
 static err_t _do_dir_include(asm_tree_t *ast, char **params,
                              size_t param_count) {
   if (param_count < 1)
@@ -242,6 +294,17 @@ parse_file_cleanup:
   return err;
 }
 
+err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
+  err_t ret = TASM_OK;
+
+  size_t calcd_size = _precalc_size(ast);
+  log_inf("Precalculated Size: 0x%x bytes\n", calcd_size);
+
+  //dest_ptr[0] = malloc(calcd_size);
+
+  return ret;
+}
+
 err_t asm_write_file(char *src_fl, char *out_fl, char *format) {
   log_inf("Assembling \"%s\"\n", src_fl);
   log_inf("Step 1: Parsing Sources\n");
@@ -251,6 +314,9 @@ err_t asm_write_file(char *src_fl, char *out_fl, char *format) {
   err_t err = asm_parse_file(src_fl, &ast);
   if (err != TASM_OK)
     goto asm_write_file_cleanup;
+
+  log_inf("Step 2: Translating Parsed Sources\n");
+  asm_translate_tree(&ast, NULL, NULL);
 
 asm_write_file_cleanup:
   for (int i = 0; i < ast.branch_count; i++) {
@@ -309,19 +375,28 @@ struct inst_elem_t {
   inst_t inst;
 };
 
-const uint32_t INSTRUCTION_COUNT = 21;
-static struct inst_elem_t insts[INSTRUCTION_COUNT] = {
-    {.name = "ld", .inst = INST_LD},   {.name = "st", .inst = INST_ST},
-    {.name = "brn", .inst = INST_BRN}, {.name = "beq", .inst = INST_BEQ},
-    {.name = "bne", .inst = INST_BNE}, {.name = "cmp", .inst = INST_CMP},
-    {.name = "cal", .inst = INST_CAL}, {.name = "rts", .inst = INST_RTS},
-    {.name = "rti", .inst = INST_RTI}, {.name = "int", .inst = INST_INT},
-    {.name = "din", .inst = INST_DIN}, {.name = "ein", .inst = INST_EIN},
-    {.name = "or", .inst = INST_OR},   {.name = "and", .inst = INST_AND},
-    {.name = "inc", .inst = INST_INC}, {.name = "dec", .inst = INST_DEC},
-    {.name = "add", .inst = INST_ADD}, {.name = "sub", .inst = INST_SUB},
-    {.name = "shr", .inst = INST_SHR}, {.name = "shl", .inst = INST_SHL},
-    {.name = "nop", .inst = INST_NOP},
+inst_descriptor_t inst_descriptors[INST_COUNT] = {
+    {.name = "ld", .inst = INST_LD, .size = 3, .param_count = 2},
+    {.name = "st", .inst = INST_ST, .size = 3, .param_count = 2},
+    {.name = "brn", .inst = INST_BRN, .size = 3, .param_count = 1}, 
+    {.name = "beq", .inst = INST_BEQ, .size = 3, .param_count = 1},
+    {.name = "bne", .inst = INST_BNE, .size = 3, .param_count = 1},
+    {.name = "cmp", .inst = INST_CMP, .size = 3, .param_count = 1},
+    {.name = "cal", .inst = INST_CAL, .size = 3, .param_count = 1}, 
+    {.name = "rts", .inst = INST_RTS, .size = 1, .param_count = 0},
+    {.name = "rti", .inst = INST_RTI, .size = 1, .param_count = 0}, 
+    {.name = "int", .inst = INST_INT, .size = 1, .param_count = 0},
+    {.name = "din", .inst = INST_DIN, .size = 1, .param_count = 0}, 
+    {.name = "ein", .inst = INST_EIN, .size = 1, .param_count = 0},
+    {.name = "or", .inst = INST_OR, .size = 4, .param_count = 2},   
+    {.name = "and", .inst = INST_AND, .size = 4, .param_count = 2},
+    {.name = "inc", .inst = INST_INC, .size = 4, .param_count = 2}, 
+    {.name = "dec", .inst = INST_DEC, .size = 4, .param_count = 2},
+    {.name = "add", .inst = INST_ADD, .size = 4, .param_count = 2}, 
+    {.name = "sub", .inst = INST_SUB, .size = 4, .param_count = 2},
+    {.name = "shr", .inst = INST_SHR, .size = 4, .param_count = 2}, 
+    {.name = "shl", .inst = INST_SHL, .size = 4, .param_count = 2},
+    {.name = "nop", .inst = INST_NOP, .size = 1, .param_count = 0},
 };
 
 inst_t get_inst(char *str) {
@@ -330,9 +405,9 @@ inst_t get_inst(char *str) {
   char *lower = str_lower(str);
 
   inst_t inst = INST_INVALID;
-  for (int i = 0; i < INSTRUCTION_COUNT; i++) {
-    if (strcmp(insts[i].name, lower) == 0) {
-      inst = insts[i].inst;
+  for (int i = 0; i < INST_COUNT; i++) {
+    if (strcmp(inst_descriptors[i].name, lower) == 0) {
+      inst = inst_descriptors[i].inst;
       break;
     }
   }

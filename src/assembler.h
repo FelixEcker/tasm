@@ -72,6 +72,16 @@ typedef enum inst_t {
   INST_INVALID = 0xff,
 } inst_t;
 
+typedef struct inst_descriptor_t {
+  inst_t inst;
+  size_t size;
+  size_t param_count;
+  char *name;
+} inst_descriptor_t;
+
+#define INST_COUNT 21
+extern inst_descriptor_t inst_descriptors[INST_COUNT];
+
 // typedef enum inst_sizes_t {
 // } inst_sizes_t;
 
@@ -124,6 +134,8 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
 err_t asm_parse_line(asm_tree_branch_t *branch, char *line);
 
 err_t asm_parse_file(char *src_fl, asm_tree_t *ast);
+
+err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size);
 
 err_t asm_write_file(char *src_fl, char *out_fl, char *format);
 
