@@ -37,7 +37,8 @@ typedef enum err_t {
 #define TASM_STR_VALUE_PREFIX "$#"
 
 typedef enum directive_t {
-  DIR_INCLUDE,
+  DIR_INVALID = -1,
+  DIR_INCLUDE = 0,
   DIR_NULLPAD,
   DIR_BYTE,
   DIR_BYTES,
@@ -68,6 +69,7 @@ typedef enum inst_t {
   INST_SHR = 0x19,
   INST_SHL = 0x29,
   INST_NOP = 0x39,
+  INST_INVALID = 0xff,
 } inst_t;
 
 // typedef enum inst_sizes_t {

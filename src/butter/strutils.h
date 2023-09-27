@@ -75,9 +75,22 @@ char *str_replace(char *orig, char *rep, char *with);
  * that pointer with the returned value, since the original pointer must be
  * deallocated using the same allocator with which it was allocated.
  * The return value must NOT be deallocated using free() etc.
- * */
+ */
 char *trim_whitespace(char *str);
 
+/* Converts all C-Style escape sequences (e.g. \n for newline or \t for tabs)
+ * into their respective ASCII Chars.
+ *
+ * Note: results of this functions have to be freed
+ */
 char *convert_escape_sequences(const char *input);
+
+/* Converts all alphabetical characters in the given string to uppercase.
+ */
+char *str_upper(char *str);
+
+/* Converts all alphabetical characters in the given string to lowercase.
+ */
+char *str_lower(char *str);
 
 #endif

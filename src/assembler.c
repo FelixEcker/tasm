@@ -89,7 +89,7 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
   branch->asm_exp[branch->exp_count].type = EXP_INSTRUCTION;
   if (keyword[0] == TASM_CHAR_DIRECTIVE_PREFIX) {
     branch->asm_exp[branch->exp_count].type = EXP_DIRECTIVE;
-    branch->asm_exp[branch->exp_count].directive = get_dir(keyword+1);
+    branch->asm_exp[branch->exp_count].directive = get_dir(keyword + 1);
   } else {
     branch->asm_exp[branch->exp_count].inst = get_inst(keyword);
   }
@@ -145,8 +145,8 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line) {
       parameters[parameter_count] = strdup(tok + 1);
     } else {
       parameters[parameter_count] = strdup(tok);
-      if (tok[strlen(tok)-1] == TASM_CHAR_PARAM_SEPERATOR)
-        parameters[parameter_count][strlen(tok)-1] = 0;
+      if (tok[strlen(tok) - 1] == TASM_CHAR_PARAM_SEPERATOR)
+        parameters[parameter_count][strlen(tok) - 1] = 0;
     }
 
     parameter_count++;
@@ -243,12 +243,68 @@ asm_write_file_cleanup:
 
 //-- Utilities --//
 
+struct directive_elem_t {
+  char *name;
+  directive_t directive;
+};
+
+static struct directive_elem_t directives[7] = {
+    {.name = "inc", .directive = DIR_INCLUDE},
+    {.name = "nullpadding", .directive = DIR_NULLPAD},
+    {.name = "byte", .directive = DIR_BYTE},
+    {.name = "bytes", .directive = DIR_BYTES},
+    {.name = "padding", .directive = DIR_PADDING},
+    {.name = "text", .directive = DIR_TEXT},
+    {.name = "symbols", .directive = DIR_SYMBOLS},
+};
+
 directive_t get_dir(char *str) {
-  return DIR_TEXT;
+  char *lower = str_lower(str);
+
+  directive_t dir = DIR_INVALID;
+  for (int i = 0; i < sizeof(directives); i++) {
+    if (strcmp(directives[i].name, str) == 0) {
+      dir = directives[i].directive;
+      break;
+    }
+  }
+
+  free(lower);
+  return dir;
 }
 
+struct inst_elem_t {
+  char *name;
+  inst_t inst;
+};
+
+static struct inst_elem_t insts[21] = {
+    {.name = "ld", .inst = INST_LD},   {.name = "st", .inst = INST_ST},
+    {.name = "brn", .inst = INST_BRN}, {.name = "beq", .inst = INST_BEQ},
+    {.name = "bne", .inst = INST_BNE}, {.name = "cmp", .inst = INST_CMP},
+    {.name = "cal", .inst = INST_CAL}, {.name = "rts", .inst = INST_RTS},
+    {.name = "rti", .inst = INST_RTI}, {.name = "int", .inst = INST_INT},
+    {.name = "din", .inst = INST_DIN}, {.name = "ein", .inst = INST_EIN},
+    {.name = "or", .inst = INST_OR},   {.name = "and", .inst = INST_AND},
+    {.name = "inc", .inst = INST_INC}, {.name = "dec", .inst = INST_DEC},
+    {.name = "add", .inst = INST_ADD}, {.name = "sub", .inst = INST_SUB},
+    {.name = "shr", .inst = INST_SHR}, {.name = "shl", .inst = INST_SHL},
+    {.name = "nop", .inst = INST_NOP},
+};
+
 inst_t get_inst(char *str) {
-  return INST_LD;
+  char *lower = str_lower(str);
+
+  inst_t inst = INST_INVALID;
+  for (int i = 0; i < sizeof(insts); i++) {
+    if (strcmp(insts[i].name, lower) == 0) {
+      inst = insts[i].inst;
+      break;
+    }
+  }
+
+  free(lower);
+  return inst; 
 }
 
 char *asm_errname(err_t err) {

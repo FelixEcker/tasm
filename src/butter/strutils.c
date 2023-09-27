@@ -272,3 +272,25 @@ char *convert_escape_sequences(const char *input) {
   output[outputIndex] = '\0'; // Null-terminate the output string
   return output;
 }
+
+char *str_upper(char *str) {
+  char *ret = malloc(strlen(str)+1);
+
+  size_t sz = strlen(str);
+  for (size_t i = 0; i < sz; i++)
+    ret[i] = toupper(str[i]);
+
+  ret[sz] = 0;
+  return ret;
+}
+
+char *str_lower(char *str) {
+  char *ret = malloc(strlen(str)+1);
+
+  size_t sz = strlen(str);
+  for (size_t i = 0; i < sz; i++)
+    ret[i] = tolower(str[i]);
+
+  ret[sz] = 0;
+  return ret;
+}
