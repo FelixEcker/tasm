@@ -1,3 +1,9 @@
+// t(heft)asm ; assembler.h
+// ---------------------------------------
+// Copyright (c) 2023, Marie Eckert
+// Licensed under the BSD 3-Clause License
+
+/// Core functionality for assembling a source file
 #ifndef ASSEMBLER_H
 #define ASSEMBLER_H
 
@@ -69,11 +75,13 @@ typedef enum inst_t {
 
 //-- Assembler Tree Datatypes --//
 
+/// The type of an "expression"
 typedef enum exp_type_t {
   EXP_DIRECTIVE = 0,
   EXP_INSTRUCTION = 1,
 } exp_type_t;
 
+/// An expression (line) of theft assembly
 typedef struct asm_exp_t {
   uint32_t line;
   exp_type_t type;
@@ -83,12 +91,15 @@ typedef struct asm_exp_t {
   char **parameters;
 } asm_exp_t;
 
+/// A branch (file) of a assembly
 typedef struct asm_tree_branch_t {
   size_t exp_count;
   asm_exp_t *asm_exp;
   char *file;
 } asm_tree_branch_t;
 
+/// The tree of the assembly. Here branch 0 represents
+/// the entry file
 typedef struct asm_tree_t {
   size_t branch_count;
   asm_tree_branch_t *branches;
@@ -103,7 +114,7 @@ typedef struct asm_res_t {
 
 //-- Functions --//
 
-char *asm_errname(err_t err);
+//- Assembling Functions -//
 
 err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
                     size_t parma_count, char **params);
@@ -114,4 +125,16 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast);
 
 err_t asm_write_file(char *src_fl, char *out_fl, char *format);
 
+//- Utility Functions -//
+
+/// Maps a string representation of a directive to its enum
+/// representation
+directive_t get_dir(char *str);
+
+/// Maps a string representation of an instruction to its enum
+/// representation
+inst_t get_inst(char *str);
+
+/// Get the error name of the given err_t
+char *asm_errname(err_t err);
 #endif

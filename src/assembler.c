@@ -1,3 +1,8 @@
+// t(heft)asm ; assembler.c
+//----------------------------------------
+// Copyright (c) 2023, Marie Eckert
+// Licensed under the BSD 3-Clause License
+
 #include <assembler.h>
 
 #include <log.h>
@@ -66,14 +71,6 @@ static uint8_t _parse_str_tok(char **dest, char *tok) {
 }
 
 //-- Assembly Funcs --//
-
-directive_t get_dir(char *str) {
-  return DIR_TEXT;
-}
-
-inst_t get_inst(char *str) {
-  return INST_LD;
-}
 
 err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
                     size_t param_count, char **params) {
@@ -245,6 +242,14 @@ asm_write_file_cleanup:
 }
 
 //-- Utilities --//
+
+directive_t get_dir(char *str) {
+  return DIR_TEXT;
+}
+
+inst_t get_inst(char *str) {
+  return INST_LD;
+}
 
 char *asm_errname(err_t err) {
   switch (err) {

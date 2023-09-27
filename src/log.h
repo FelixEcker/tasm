@@ -1,3 +1,10 @@
+// t(heft)asm ; log.h
+//----------------------------------------
+// Copyright (c) 2023, Marie Eckert
+// Licensed under the BSD 3-Clause License
+//----------------------------------------
+
+/// Simple logging functionality with different status indicators
 #ifndef LOG_H
 #define LOG_H
 

@@ -1,7 +1,7 @@
-/* t(heft)asm: main.c ; author: Marie Eckert
- *
- * Copyright (c) 2023, Marie Eckert
- */
+// t(heft)asm ; main.c
+//----------------------------------------
+// Copyright (c) 2023, Marie Eckert
+// Licensed under the BSD 3-Clause License
 
 #include <assembler.h>
 #include <log.h>
