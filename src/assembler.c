@@ -70,6 +70,7 @@ static size_t _precalc_size(asm_tree_t *ast) {
     for (size_t e = 0; e < branch.exp_count; e++) {
       asm_exp_t exp = branch.asm_exp[e];
       if (exp.type != EXP_INSTRUCTION) {
+        if (exp.type == EXP_LABEL) continue;
         if (exp.directive != DIR_NULLPAD && exp.directive != DIR_BYTE &&
             exp.directive != DIR_BYTES)
           continue;
