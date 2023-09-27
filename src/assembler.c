@@ -294,13 +294,45 @@ parse_file_cleanup:
   return err;
 }
 
+err_t asm_resolve_labels(asm_tree_t *ast) {
+  err_t ret = TASM_OK;
+
+  size_t offset = 0;
+  for (size_t b = 0; b < ast->branch_count; b++) {
+    asm_tree_branch_t *branch = &ast->branches[b];
+
+    for (size_t e = 0; e < branch->exp_count; e++) {
+      asm_exp_t *exp = &branch->asm_exp[e];
+      if (exp->type != EXP_LABEL) {
+        if (exp->type == EXP_DIRECTIVE) {
+          offset += _dir_exp_size(*exp);
+          continue;
+        } 
+
+        offset += _get_inst_size(exp->inst);
+        continue;
+      }
+
+      exp->lbl_position = offset;
+    }
+  }
+
+  return ret;
+}
+
 err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
   err_t ret = TASM_OK;
 
   size_t calcd_size = _precalc_size(ast);
   log_inf("Precalculated Size: 0x%x bytes\n", calcd_size);
 
-  //dest_ptr[0] = malloc(calcd_size);
+  log_inf("Resolving label positions...\n");
+  ret = asm_resolve_labels(ast);
+  if (ret != TASM_OK)
+    return ret;
+
+  dest_ptr[0] = malloc(calcd_size);
+  size[0] = calcd_size;
 
   return ret;
 }
@@ -316,7 +348,17 @@ err_t asm_write_file(char *src_fl, char *out_fl, char *format) {
     goto asm_write_file_cleanup;
 
   log_inf("Step 2: Translating Parsed Sources\n");
-  asm_translate_tree(&ast, NULL, NULL);
+
+  size_t size;
+  uint8_t *bin;
+  err = asm_translate_tree(&ast, &bin, &size);
+  if (err != TASM_OK) {
+    if (size > 0)
+      free(bin);
+    goto asm_write_file_cleanup;
+  }
+
+  log_inf("Step 3: Writing 0x%x bytes to \"%s\"\n", size, out_fl);
 
 asm_write_file_cleanup:
   for (int i = 0; i < ast.branch_count; i++) {

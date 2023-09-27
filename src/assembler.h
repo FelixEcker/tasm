@@ -82,15 +82,13 @@ typedef struct inst_descriptor_t {
 #define INST_COUNT 21
 extern inst_descriptor_t inst_descriptors[INST_COUNT];
 
-// typedef enum inst_sizes_t {
-// } inst_sizes_t;
-
 //-- Assembler Tree Datatypes --//
 
 /// The type of an "expression"
 typedef enum exp_type_t {
   EXP_DIRECTIVE = 0,
   EXP_INSTRUCTION = 1,
+  EXP_LABEL = 2,
 } exp_type_t;
 
 /// An expression (line) of theft assembly
@@ -100,6 +98,7 @@ typedef struct asm_exp_t {
   inst_t inst;
   directive_t directive;
   size_t parameter_count;
+  size_t lbl_position;
   char **parameters;
 } asm_exp_t;
 
@@ -134,6 +133,8 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
 err_t asm_parse_line(asm_tree_branch_t *branch, char *line);
 
 err_t asm_parse_file(char *src_fl, asm_tree_t *ast);
+
+err_t asm_resolve_labels(asm_tree_t *ast);
 
 err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size);
 

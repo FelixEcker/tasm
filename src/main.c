@@ -9,11 +9,13 @@
 #include <argp.h>
 #include <stdio.h>
 
-const char *argp_program_version = "mariebuild 0.0.0";
+#define AUTHOR "Marie Eckert"
+
+const char *argp_program_version = "tasm 0.0.0";
 const char *argp_program_bug_address =
     "https://github.com/FelixEcker/tasm/issues";
 const char description[] = "Assembler for the Theft fantasy cpu\n"
-                           "Author: Marie Eckert";
+                           "Author: " AUTHOR;
 const char args_doc[] = "";
 
 static struct argp_option options[] = {
@@ -62,6 +64,8 @@ int main(int argc, char **argv) {
   args.format = TASM_OUT_ROM;
 
   argp_parse(&argp, argc, argv, 0, 0, &args);
+  
+  printf("%s by " AUTHOR "\n\n", argp_program_version);
 
   if (args.in == NULL) {
     log_err("Missing assembler input file!\n");
