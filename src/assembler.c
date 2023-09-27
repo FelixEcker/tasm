@@ -199,6 +199,8 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
         realloc(ast->branches, sizeof(asm_tree_branch_t) * ast->branch_count);
   }
 
+  ast->branches[ast->branch_count - 1].exp_count = 0;
+
   err_t err;
   while ((read = getline(&line, &len, file)) != -1) {
     linenum++;
@@ -248,7 +250,8 @@ struct directive_elem_t {
   directive_t directive;
 };
 
-static struct directive_elem_t directives[7] = {
+const uint32_t DIRECTIVE_COUNT = 7;
+static struct directive_elem_t directives[DIRECTIVE_COUNT] = {
     {.name = "inc", .directive = DIR_INCLUDE},
     {.name = "nullpadding", .directive = DIR_NULLPAD},
     {.name = "byte", .directive = DIR_BYTE},
@@ -259,10 +262,12 @@ static struct directive_elem_t directives[7] = {
 };
 
 directive_t get_dir(char *str) {
+  if (str == NULL)
+    return DIR_INVALID;
   char *lower = str_lower(str);
 
   directive_t dir = DIR_INVALID;
-  for (int i = 0; i < sizeof(directives); i++) {
+  for (int i = 0; i < DIRECTIVE_COUNT; i++) {
     if (strcmp(directives[i].name, str) == 0) {
       dir = directives[i].directive;
       break;
@@ -278,7 +283,8 @@ struct inst_elem_t {
   inst_t inst;
 };
 
-static struct inst_elem_t insts[21] = {
+const uint32_t INSTRUCTION_COUNT = 21;
+static struct inst_elem_t insts[INSTRUCTION_COUNT] = {
     {.name = "ld", .inst = INST_LD},   {.name = "st", .inst = INST_ST},
     {.name = "brn", .inst = INST_BRN}, {.name = "beq", .inst = INST_BEQ},
     {.name = "bne", .inst = INST_BNE}, {.name = "cmp", .inst = INST_CMP},
@@ -293,10 +299,12 @@ static struct inst_elem_t insts[21] = {
 };
 
 inst_t get_inst(char *str) {
+  if (str == NULL)
+    return INST_INVALID;
   char *lower = str_lower(str);
 
   inst_t inst = INST_INVALID;
-  for (int i = 0; i < sizeof(insts); i++) {
+  for (int i = 0; i < INSTRUCTION_COUNT; i++) {
     if (strcmp(insts[i].name, lower) == 0) {
       inst = insts[i].inst;
       break;
@@ -304,7 +312,7 @@ inst_t get_inst(char *str) {
   }
 
   free(lower);
-  return inst; 
+  return inst;
 }
 
 char *asm_errname(err_t err) {
