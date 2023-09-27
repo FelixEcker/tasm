@@ -32,6 +32,7 @@ typedef enum err_t {
 #define TASM_CHAR_ESCAPE '\\'
 #define TASM_CHAR_DECIMAL_POSTFIX 't'
 #define TASM_CHAR_BINARY_POSTFIX 'b'
+#define TASM_CHAR_LABEL_POSTFIX ':'
 
 #define TASM_STR_ADDRESS_PREFIX "$"
 #define TASM_STR_VALUE_PREFIX "$#"

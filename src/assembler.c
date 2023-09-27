@@ -150,6 +150,11 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
   if (keyword[0] == TASM_CHAR_DIRECTIVE_PREFIX) {
     branch->asm_exp[branch->exp_count].type = EXP_DIRECTIVE;
     branch->asm_exp[branch->exp_count].directive = get_dir(keyword + 1);
+  } else if (keyword[strlen(keyword)-1] == TASM_CHAR_LABEL_POSTFIX) {
+    branch->asm_exp[branch->exp_count].type = EXP_LABEL;
+    branch->asm_exp[branch->exp_count].parameter_count = 1;
+    branch->asm_exp[branch->exp_count].parameters = malloc(sizeof(char*));
+    branch->asm_exp[branch->exp_count].parameters[0] = strdup(keyword);
   } else {
     branch->asm_exp[branch->exp_count].inst = get_inst(keyword);
   }
