@@ -20,7 +20,10 @@ typedef enum err_t {
   TASM_MISSING_PARAMETER,
   TASM_INVALID_DIRECTIVE,
   TASM_DIRECTIVE_MISSING_PARAMETER,
+  TASM_INVALID_PARAMETER_FORMAT,
+  TASM_INVALID_TYPE,
   TASM_STRING_NOT_CLOSED,
+  TASM_INVALID_REGISTER,
 } err_t;
 
 //-- Assembly Keywords / Tokens / Values --//
@@ -29,13 +32,14 @@ typedef enum err_t {
 #define TASM_CHAR_COMMENT ';'
 #define TASM_CHAR_DIRECTIVE_PREFIX '.'
 #define TASM_CHAR_STRING_CONT '"'
+#define TASM_CHAR_CHAR_CONT '\''
 #define TASM_CHAR_ESCAPE '\\'
 #define TASM_CHAR_DECIMAL_POSTFIX 't'
 #define TASM_CHAR_BINARY_POSTFIX 'b'
 #define TASM_CHAR_LABEL_POSTFIX ':'
 
-#define TASM_STR_ADDRESS_PREFIX "$"
-#define TASM_STR_VALUE_PREFIX "$#"
+#define TASM_CHAR_ADDRESS_PREFIX '$'
+#define TASM_CHAR_VALUE_PREFIX '#'
 
 typedef enum directive_t {
   DIR_INVALID = -1,
@@ -72,6 +76,17 @@ typedef enum inst_t {
   INST_NOP = 0x39,
   INST_INVALID = 0xff,
 } inst_t;
+
+typedef enum reg_t {
+  REG_ACC = 0,
+  REG_C = 1,
+  REG_D = 2,
+  REG_E = 3,
+  REG_F = 4,
+  REG_G = 5,
+  REG_H = 6,
+  REG_INVALID = 0xff,
+} reg_t;
 
 typedef struct inst_descriptor_t {
   inst_t inst;
@@ -136,6 +151,9 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line, uint32_t line_num);
 err_t asm_parse_file(char *src_fl, asm_tree_t *ast);
 
 err_t asm_resolve_labels(asm_tree_t *ast);
+
+err_t asm_translate_parameters(asm_tree_t *ast, char **params, size_t count,
+                               uint8_t *dest);
 
 err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size);
 

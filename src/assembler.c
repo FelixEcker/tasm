@@ -24,6 +24,28 @@ static uint8_t _handle_err(err_t err, char *file, char *line,
   return 0;
 }
 
+static reg_t _get_register(char reg_id) {
+  printf("%c\n", reg_id);
+  switch (reg_id) {
+  case 'a':
+    return REG_ACC;
+  case 'c':
+    return REG_C;
+  case 'd':
+    return REG_D;
+  case 'e':
+    return REG_E;
+  case 'f':
+    return REG_F;
+  case 'g':
+    return REG_G;
+  case 'h':
+    return REG_H;
+  default:
+    return REG_INVALID;
+  }
+}
+
 static size_t _dir_exp_size(asm_exp_t exp) {
   switch (exp.directive) {
   case DIR_BYTES:
@@ -70,7 +92,8 @@ static size_t _precalc_size(asm_tree_t *ast) {
     for (size_t e = 0; e < branch.exp_count; e++) {
       asm_exp_t exp = branch.asm_exp[e];
       if (exp.type != EXP_INSTRUCTION) {
-        if (exp.type == EXP_LABEL) continue;
+        if (exp.type == EXP_LABEL)
+          continue;
         if (exp.directive != DIR_NULLPAD && exp.directive != DIR_BYTE &&
             exp.directive != DIR_BYTES)
           continue;
@@ -84,6 +107,44 @@ static size_t _precalc_size(asm_tree_t *ast) {
   }
 
   return ret;
+}
+
+static void _mod_inst_address(uint8_t *inst) {
+  switch (inst[0]) {
+  case INST_CMP:
+  case INST_LD:
+    inst[0] = inst[0] | 0b10000000;
+    break;
+  case INST_OR:
+  case INST_AND:
+  case INST_INC:
+  case INST_DEC:
+  case INST_ADD:
+  case INST_SUB:
+  case INST_SHR:
+  case INST_SHL:
+    inst[3] = inst[3] | 0b10000000;
+    break;
+  }
+}
+
+static void _mod_inst_register(uint8_t *inst, reg_t reg) {
+  switch (inst[0]) {
+  case INST_LD:
+  case INST_CMP:
+    inst[0] = inst[0] | (reg << 4);
+    break;
+  case INST_OR:
+  case INST_AND:
+  case INST_INC:
+  case INST_DEC:
+  case INST_ADD:
+  case INST_SUB:
+  case INST_SHR:
+  case INST_SHL:
+    inst[3] = inst[3] | (reg << 4);
+    break;
+  }
 }
 
 static err_t _do_dir_include(asm_tree_t *ast, char **params,
@@ -334,6 +395,83 @@ err_t asm_resolve_labels(asm_tree_t *ast) {
   return ret;
 }
 
+err_t asm_translate_parameters(asm_tree_t *ast, char **params, size_t count,
+                               uint8_t *dest) {
+  err_t ret = TASM_OK;
+
+  for (size_t p = 0; p < count; p++) {
+    if (params[p] == NULL) {
+      log_wrn("internal: asm_translate_parameters received a null-pointer "
+              "param!\n");
+      continue;
+    }
+
+    switch (params[p][0]) {
+    case TASM_CHAR_CHAR_CONT:
+      if (strlen(params[p]) != 3)
+        return TASM_INVALID_PARAMETER_FORMAT;
+
+      dest[1] = params[p][1];
+      break;
+    case TASM_CHAR_ADDRESS_PREFIX:
+      if (strlen(params[p]) < 2)
+        return TASM_INVALID_PARAMETER_FORMAT;
+
+      size_t offset = 1;
+      if (params[p][1] == TASM_CHAR_VALUE_PREFIX)
+        offset++;
+
+      size_t len = strlen(params[p] + offset);
+      unsigned long value = 0;
+
+      char lchar = params[p][strlen(params[p] - 1)];
+      switch (lchar) {
+      case TASM_CHAR_DECIMAL_POSTFIX: {
+        char *cpy = strdup(params[p] + offset);
+        cpy[len - 1] = 0;
+        value = strtoul(params[p] + offset, NULL, 10);
+        free(cpy);
+        break;
+      }
+      case TASM_CHAR_BINARY_POSTFIX: {
+        char *cpy = strdup(params[p] + offset);
+        cpy[len - 1] = 0;
+        value = strtoul(params[p] + offset, NULL, 2);
+        free(cpy);
+        break;
+      }
+      default:
+        value = strtoul(params[p] + offset, NULL, 16);
+      }
+
+      if (params[p][1] == TASM_CHAR_VALUE_PREFIX)
+        _mod_inst_address(dest);
+      dest[1] = (value & 0xff00) >> 8;
+      dest[2] = value & 0xff;
+      break;
+    case 'a':
+    case 'c':
+    case 'd':
+    case 'e':
+    case 'f':
+    case 'g':
+    case 'h':
+      if (strlen(params[p]) > 1)
+        break;
+
+      reg_t reg = _get_register(params[p][0]);
+      if (reg == REG_INVALID)
+        return TASM_INVALID_REGISTER;
+      _mod_inst_register(dest, reg);
+      break;
+    default:
+      return TASM_INVALID_TYPE;
+    }
+  }
+
+  return ret;
+}
+
 err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
   err_t ret = TASM_OK;
 
@@ -348,6 +486,11 @@ err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
   dest_ptr[0] = malloc(calcd_size);
   size[0] = calcd_size;
 
+  log_inf("TODO: Replacing Symbol usages...\n");
+
+  log_inf("Translating tree...\n");
+
+  size_t wi = 0;
   asm_tree_branch_t *branch;
   asm_exp_t *exp;
   for (size_t b = 0; b < ast->branch_count; b++) {
@@ -362,6 +505,20 @@ err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
         ret = TASM_INVALID_PARAMETER;
         goto asm_translate_tree_exit;
       }
+
+      size_t cur_size = _get_inst_size(exp->inst);
+      uint8_t *translated = malloc(cur_size);
+      translated[0] = exp->inst;
+      ret = asm_translate_parameters(ast, exp->parameters, exp->parameter_count,
+                                     translated + 1);
+
+      if (ret != TASM_OK) {
+        free(translated);
+        goto asm_translate_tree_exit;
+      }
+
+      memcpy(dest_ptr[0] + wi, translated, cur_size);
+      free(translated);
     }
   }
 
@@ -509,6 +666,12 @@ char *asm_errname(err_t err) {
     return "Invalid Parameter for Directive";
   case TASM_STRING_NOT_CLOSED:
     return "String is not closed at EOL";
+  case TASM_INVALID_PARAMETER_FORMAT:
+    return "Invalid format for Parameter";
+  case TASM_INVALID_TYPE:
+    return "Invalid type for Parameter";
+  case TASM_INVALID_REGISTER:
+    return "Invalid Register identifier";
   default:
     return "Unknown Error";
   }
