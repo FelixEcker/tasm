@@ -107,6 +107,11 @@ typedef enum exp_type_t {
   EXP_LABEL = 2,
 } exp_type_t;
 
+typedef struct asm_symbol_t {
+  char *name;
+  char *value;
+} asm_symbol_t;
+
 /// An expression (line) of theft assembly
 typedef struct asm_exp_t {
   uint32_t line;
@@ -128,29 +133,27 @@ typedef struct asm_tree_branch_t {
 /// The tree of the assembly. Here branch 0 represents
 /// the entry file
 typedef struct asm_tree_t {
+  directive_t curr_section;
   size_t branch_count;
   asm_tree_branch_t *branches;
+  size_t symbol_count;
+  asm_symbol_t *symbols;
 } asm_tree_t;
-
-typedef struct asm_res_t {
-  uint32_t line;
-  err_t status;
-  size_t result_size;
-  uint8_t *result;
-} asm_res_t;
 
 //-- Functions --//
 
 //- Assembling Functions -//
 
-err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
+err_t asm_parse_exp(asm_tree_t *ast, char *keyword,
                     size_t parma_count, char **params, uint32_t line);
 
-err_t asm_parse_line(asm_tree_branch_t *branch, char *line, uint32_t line_num);
+err_t asm_parse_line(asm_tree_t *ast, char *line, uint32_t line_num);
 
 err_t asm_parse_file(char *src_fl, asm_tree_t *ast);
 
 err_t asm_resolve_labels(asm_tree_t *ast);
+
+err_t asm_replace_symbols(asm_tree_t *ast);
 
 err_t asm_translate_parameters(asm_tree_t *ast, char **params, size_t count,
                                uint8_t *dest);

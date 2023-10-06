@@ -25,7 +25,6 @@ static uint8_t _handle_err(err_t err, char *file, char *line,
 }
 
 static reg_t _get_register(char reg_id) {
-  printf("%c\n", reg_id);
   switch (reg_id) {
   case 'a':
     return REG_ACC;
@@ -203,9 +202,40 @@ static uint8_t _parse_str_tok(char **dest, char *tok) {
 
 //-- Assembly Funcs --//
 
-err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
-                    size_t param_count, char **params, uint32_t line) {
+err_t asm_parse_symbol(asm_tree_t *ast, char *name, size_t word_count,
+                       char **words) {
+  if (name == NULL || words == NULL) {
+    log_wrn("internal: asm_parse_symbol was passed one or more NULL-values\n");
+    return TASM_OK;
+  }
+
+  if (ast->symbol_count == 0) {
+    ast->symbols = malloc(sizeof(asm_symbol_t));
+  } else {
+    ast->symbols = realloc(ast->symbols,
+                           sizeof(asm_symbol_t) * (ast->symbol_count + 1));
+  }
+
+  ast->symbols[ast->symbol_count].name = strdup(name);
+  ast->symbols[ast->symbol_count].value = str_from_strarr(words, word_count, ' '); 
+
+  for (size_t i = 0; i < word_count; i++)
+    free(words[i]);
+
+  free(words);
+  ast->symbol_count++;
+  return TASM_OK;
+}
+
+err_t asm_parse_exp(asm_tree_t *ast, char *keyword, size_t param_count,
+                    char **params, uint32_t line) {
   err_t ret = TASM_OK;
+
+  if (ast->curr_section == DIR_SYMBOLS &&
+      keyword[0] != TASM_CHAR_DIRECTIVE_PREFIX)
+    return asm_parse_symbol(ast, keyword, param_count, params);
+
+  asm_tree_branch_t *branch = &ast->branches[ast->branch_count - 1];
 
   if (branch->exp_count == 0) {
     branch->asm_exp = malloc(sizeof(asm_exp_t));
@@ -222,6 +252,17 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
   if (keyword[0] == TASM_CHAR_DIRECTIVE_PREFIX) {
     branch->asm_exp[branch->exp_count].type = EXP_DIRECTIVE;
     branch->asm_exp[branch->exp_count].directive = get_dir(keyword + 1);
+
+    switch (branch->asm_exp[branch->exp_count].directive) {
+    case DIR_SYMBOLS:
+      ast->curr_section = DIR_SYMBOLS;
+      break;
+    case DIR_TEXT:
+      ast->curr_section = DIR_TEXT;
+      break;
+    default:
+      break;
+    }
   } else if (keyword[strlen(keyword) - 1] == TASM_CHAR_LABEL_POSTFIX) {
     branch->asm_exp[branch->exp_count].type = EXP_LABEL;
     branch->asm_exp[branch->exp_count].parameter_count = 1;
@@ -235,7 +276,7 @@ err_t asm_parse_exp(asm_tree_branch_t *branch, char *keyword,
   return ret;
 }
 
-err_t asm_parse_line(asm_tree_branch_t *branch, char *line, uint32_t line_num) {
+err_t asm_parse_line(asm_tree_t *ast, char *line, uint32_t line_num) {
   err_t ret = TASM_OK;
   char *linecpy = strdup(line);
 
@@ -303,7 +344,7 @@ err_t asm_parse_line(asm_tree_branch_t *branch, char *line, uint32_t line_num) {
     }
   }
 
-  ret = asm_parse_exp(branch, keyword, parameter_count, parameters, line_num);
+  ret = asm_parse_exp(ast, keyword, parameter_count, parameters, line_num);
 parse_line_cleanup:
   free(linecpy);
   if (keyword != NULL)
@@ -343,7 +384,7 @@ err_t asm_parse_file(char *src_fl, asm_tree_t *ast) {
   err_t err;
   while ((read = getline(&line, &len, file)) != -1) {
     linenum++;
-    err = asm_parse_line(&ast->branches[branch_ix], line, linenum);
+    err = asm_parse_line(ast, line, linenum);
     if (err != TASM_OK)
       if (_handle_err(err, src_fl, line, linenum) == 0)
         goto parse_file_cleanup;
@@ -391,6 +432,12 @@ err_t asm_resolve_labels(asm_tree_t *ast) {
       exp->lbl_position = offset;
     }
   }
+
+  return ret;
+}
+
+err_t asm_replace_symbols(asm_tree_t *ast) {
+  err_t ret = TASM_OK;
 
   return ret;
 }
@@ -456,15 +503,15 @@ err_t asm_translate_parameters(asm_tree_t *ast, char **params, size_t count,
     case 'f':
     case 'g':
     case 'h':
-      if (strlen(params[p]) > 1)
+      if (strlen(params[p]) == 1) {
+        reg_t reg = _get_register(params[p][0]);
+        if (reg == REG_INVALID)
+          return TASM_INVALID_REGISTER;
+        _mod_inst_register(dest, reg);
         break;
-
-      reg_t reg = _get_register(params[p][0]);
-      if (reg == REG_INVALID)
-        return TASM_INVALID_REGISTER;
-      _mod_inst_register(dest, reg);
-      break;
+      }
     default:
+      // TODO: Replace with labels
       return TASM_INVALID_TYPE;
     }
   }
@@ -486,7 +533,10 @@ err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
   dest_ptr[0] = malloc(calcd_size);
   size[0] = calcd_size;
 
-  log_inf("TODO: Replacing Symbol usages...\n");
+  log_inf("Replacing Symbol usages...\n");
+  ret = asm_replace_symbols(ast);
+  if (ret != TASM_OK)
+    return ret;
 
   log_inf("Translating tree...\n");
 
@@ -534,6 +584,8 @@ err_t asm_write_file(char *src_fl, char *out_fl, char *format) {
   log_inf("Step 1: Parsing Sources\n");
   asm_tree_t ast;
   ast.branch_count = 0;
+  ast.symbol_count = 0;
+  ast.curr_section = DIR_INVALID;
 
   err_t err = asm_parse_file(src_fl, &ast);
   if (err != TASM_OK)
@@ -565,6 +617,12 @@ asm_write_file_cleanup:
 
     free(ast.branches[i].asm_exp);
   }
+
+  for (int i = 0; i < ast.symbol_count; i++) {
+    free(ast.symbols[i].name);
+    free(ast.symbols[i].value);
+  }
+  free(ast.symbols);
   free(ast.branches);
   return err;
 }

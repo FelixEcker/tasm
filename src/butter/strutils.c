@@ -30,6 +30,7 @@
 #include <butter/strutils.h>
 
 #include <ctype.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -293,4 +294,23 @@ char *str_lower(char *str) {
 
   ret[sz] = 0;
   return ret;
+}
+
+char *str_from_strarr(char **strarr, size_t strc, char seperator) {
+  size_t total_size = 0;
+
+  for (size_t i = 0; i < strc; i++) {
+    total_size += strlen(strarr[i]);
+  }
+
+  char *out = malloc(total_size + strc);
+  size_t offs = 0;
+  for (size_t i = 0; i < strc - 1; i++) {
+    strcpy(out + offs, strarr[i]);
+    offs += strlen(strarr[i]);
+    out[offs] = seperator;
+  }
+
+  strcpy(out + offs, strarr[strc-1]);
+  return out;
 }

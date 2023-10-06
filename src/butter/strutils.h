@@ -30,6 +30,8 @@
 #ifndef BUTTER_STRUTILS_H
 #define BUTTER_STRUTILS_H
 
+#include <stddef.h>
+
 extern const char str_terminator[];
 extern const char newline[];
 
@@ -92,5 +94,10 @@ char *str_upper(char *str);
 /* Converts all alphabetical characters in the given string to lowercase.
  */
 char *str_lower(char *str);
+
+/* Converts an array of strings into a single string seperated by the specified
+ * seperator.
+ */
+char *str_from_strarr(char **strarr, size_t strc, char seperator);
 
 #endif
