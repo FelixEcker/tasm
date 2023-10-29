@@ -549,7 +549,7 @@ err_t asm_translate_parameters(asm_tree_t *ast, char **params, size_t count,
         break;
       }
     default:
-      // TODO: Replace with labels
+      
       return TASM_INVALID_TYPE;
     }
   }

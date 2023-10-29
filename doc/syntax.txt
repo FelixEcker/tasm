@@ -1,0 +1,43 @@
+theft/stroke assembler
+
+BASIC SYNTAX
+COMMETING
+The prefix for comments is the semi-colon. Anything on a line that comes after
+a semicolon will be counted as a comment, as long as it is not placed within
+a string.
+
+ASSEMBLER DIRECTIVES
+Assembler directives must be prefixed with a dot. Valid assembler directives
+are:
+
+1. include PATH [section]
+The include directive tells the assembler to paste the text from the specified
+file at the point where it is located. A section like "text" or "data" can be
+specified which will cause the assembler to simply include the text from that
+specific section.
+
+Any file ending in .s, .S or .asm will be preprocessed before being inserted.
+
+2. nullpadding AMOUNT
+The nullpadding directive tells the assembler to add AMOUNT of null-bytes before
+the next part of the assembly result.
+
+3. byte VALUE
+The byte directive tells the assembler to place a byte of value VALUE within the
+assembly at the point where the directive was called
+
+4. bytes AMOUNT VALUE[ VALUE VALUE ...]
+The bytes directive does the same as the byte directive but for multiple bytes.
+AMOUNT specifies the number of bytes followed by the same number of values.
+
+5. padding AMOUNT VALUE
+The padding directive does the same as the nullpadding directive, but allows
+to use VALUE as the padding byte.
+
+6. text
+The text directive starts the text section. This section contains the actual
+instructions which will be assembled.
+
+7. symbols
+The symbols directive start the symbol section. This sections conatins all
+symbol definitions.
