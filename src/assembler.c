@@ -6,6 +6,7 @@
 #include <assembler.h>
 
 #include <log.h>
+#include <debug_utils.h>
 
 #include <butter/strutils.h>
 
@@ -152,6 +153,15 @@ static err_t _do_dir_include(asm_tree_t *ast, char **params,
     return TASM_DIRECTIVE_MISSING_PARAMETER;
 
   return asm_parse_file(params[0], ast);
+}
+
+static char *_get_symbol(asm_tree_t *ast, char *name) {
+  for (size_t s = 0; s < ast->symbol_count; s++) {
+    if (strcmp(name, ast->symbols[s].name) == 0)
+      return strdup(ast->symbols[s].value);
+  }
+
+  return NULL;
 }
 
 static uint8_t _str_closed(char *str) {
@@ -444,7 +454,19 @@ err_t asm_replace_symbols(asm_tree_t *ast) {
 
     for (size_t e = 0; e < branch->exp_count; e++) {
       asm_exp_t *exp = &branch->asm_exp[e];
-    
+ 
+      for (size_t p = 0; p < exp->parameter_count; p++) {
+        if (exp->parameters[p][0] != TASM_CHAR_SYMBOL_USAGE_PREFIX)
+          continue;
+        
+        char *new_param = _get_symbol(ast, exp->parameters[p] + 1);
+
+        if (new_param == NULL) 
+          continue;
+
+        free(exp->parameters[p]);
+        exp->parameters[p] = new_param;
+      }
     }
   }
 
@@ -614,6 +636,7 @@ err_t asm_write_file(char *src_fl, char *out_fl, char *format) {
   log_inf("Step 3: Writing 0x%x bytes to \"%s\"\n", size, out_fl);
 
 asm_write_file_cleanup:
+  debug_print_ast(ast);
   for (int i = 0; i < ast.branch_count; i++) {
     for (int j = 0; j < ast.branches[i].exp_count; j++) {
       size_t param_count = ast.branches[i].asm_exp[j].parameter_count;
