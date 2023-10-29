@@ -5,13 +5,20 @@
 ; Pad the actual machine code up by one null-byte (0x00 [MACHINE CODE])
 .nullpadding 1
 
+.symbols
+ADDR_DEVICENUM $6000
+RAMDEVICE $#0002
+
 .text
 ; First write 0xfeed to address 0x00ab on device 2
-ld a, $#0002 ; Ready device number
-st a, $6000  ; Set device number
+ld a, RMADEVICE      ; Ready device number
+st a, ADDR_DEVICENUM ; Set device number
 ld a, $#feed ; Ready value to be written
 st a, $00ab  ; Store the value to address 0x00ab
 
+brn ENTRY
+
+ENTRY:
 ; Second try to load back the value in to register c
 ld  c, $00ab   ; Load c from $00ab (High Byte of previously written data)
 shl c, $#0008  ; Shift c left by 8 bits so that we can add on our low byte

@@ -1,6 +1,7 @@
 ; reserved addresses include file, to use include this file using the .inc
 ; directive within the .symbols section of your assembler source.
 
+.symbols
 ; Applies only on ram device
 STACK_PTR_STORE      = $0002
 

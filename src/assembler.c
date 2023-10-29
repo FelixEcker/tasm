@@ -439,6 +439,15 @@ err_t asm_resolve_labels(asm_tree_t *ast) {
 err_t asm_replace_symbols(asm_tree_t *ast) {
   err_t ret = TASM_OK;
 
+  for (size_t b = 0; b < ast->branch_count; b++) {
+    asm_tree_branch_t *branch = &ast->branches[b];
+
+    for (size_t e = 0; e < branch->exp_count; e++) {
+      asm_exp_t *exp = &branch->asm_exp[e];
+    
+    }
+  }
+
   return ret;
 }
 

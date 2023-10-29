@@ -4,6 +4,9 @@
 
 .symbols
 .inc "reserved_addr.inc"
+.test "a a aasdasdasd\nasdd mpapmpmp\taa\rb"
+.test "asb"
+.test "aa"
 RAM_DEVICE : $02
 
 .text
