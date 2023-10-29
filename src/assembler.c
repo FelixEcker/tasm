@@ -448,12 +448,14 @@ err_t asm_resolve_labels(asm_tree_t *ast) {
 
 err_t asm_replace_symbols(asm_tree_t *ast) {
   err_t ret = TASM_OK;
-
+  
+  asm_tree_branch_t *branch;
+  asm_exp_t *exp;
   for (size_t b = 0; b < ast->branch_count; b++) {
-    asm_tree_branch_t *branch = &ast->branches[b];
+    branch = &ast->branches[b];
 
     for (size_t e = 0; e < branch->exp_count; e++) {
-      asm_exp_t *exp = &branch->asm_exp[e];
+      exp = &branch->asm_exp[e];
  
       for (size_t p = 0; p < exp->parameter_count; p++) {
         if (exp->parameters[p][0] != TASM_CHAR_SYMBOL_USAGE_PREFIX)
@@ -461,8 +463,10 @@ err_t asm_replace_symbols(asm_tree_t *ast) {
         
         char *new_param = _get_symbol(ast, exp->parameters[p] + 1);
 
-        if (new_param == NULL) 
-          continue;
+        if (new_param == NULL) {
+          ret = TASM_INVALID_SYMBOL;
+          goto asm_replace_symbols_exit;
+        }
 
         free(exp->parameters[p]);
         exp->parameters[p] = new_param;
@@ -470,6 +474,9 @@ err_t asm_replace_symbols(asm_tree_t *ast) {
     }
   }
 
+asm_replace_symbols_exit:
+  if (ret != TASM_OK)
+    _handle_err(ret, branch->file, "?", exp->line);
   return ret;
 }
 
@@ -762,6 +769,8 @@ char *asm_errname(err_t err) {
     return "Invalid type for Parameter";
   case TASM_INVALID_REGISTER:
     return "Invalid Register identifier";
+  case TASM_INVALID_SYMBOL:
+    return "Invalid Symbol / Could Not Resolve";
   default:
     return "Unknown Error";
   }

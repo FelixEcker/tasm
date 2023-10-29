@@ -24,6 +24,7 @@ typedef enum err_t {
   TASM_INVALID_TYPE,
   TASM_STRING_NOT_CLOSED,
   TASM_INVALID_REGISTER,
+  TASM_INVALID_SYMBOL,
 } err_t;
 
 //-- Assembly Keywords / Tokens / Values --//

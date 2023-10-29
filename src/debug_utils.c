@@ -18,6 +18,7 @@ void debug_print_ast(asm_tree_t ast) {
 
   for (size_t s = 0; s < ast.branch_count; s++) {
     printf("    branch {\n");
+    printf("      file: %s;\n", ast.branches[s].file);
     for (size_t e = 0; e < ast.branches[s].exp_count; e++) {
       asm_exp_t exp = ast.branches[s].asm_exp[e];
       printf("      expr {\n");
