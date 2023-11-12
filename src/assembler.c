@@ -600,7 +600,7 @@ err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
   if (ret != TASM_OK)
     return ret;
 
-  dest_ptr[0] = malloc(calcd_size);
+  *dest_ptr = malloc(calcd_size);
   size[0] = calcd_size;
 
   log_inf("Replacing Symbol usages...\n");
@@ -630,15 +630,16 @@ err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
       uint8_t *translated = malloc(cur_size);
       translated[0] = exp->inst;
       ret = asm_translate_parameters(ast, exp->parameters, exp->parameter_count,
-                                     translated + 1);
+                                     translated);
 
       if (ret != TASM_OK) {
         free(translated);
         goto asm_translate_tree_exit;
       }
 
-      memcpy(dest_ptr[0] + wi, translated, cur_size);
+      memcpy(*dest_ptr + wi, translated, cur_size);
       free(translated);
+      wi += cur_size;
     }
   }
 
@@ -672,8 +673,17 @@ err_t asm_write_file(char *src_fl, char *out_fl, char *format) {
     goto asm_write_file_cleanup;
   }
 
-  log_inf("Step 3: Writing 0x%x bytes to \"%s\"\n", size, out_fl);
+  for (size_t s = 0; s < size; s++)
+    printf("%.2x ", bin[s]);
 
+  log_inf("Step 3: Writing %d bytes to \"%s\"\n", size, out_fl);
+
+  FILE *out = fopen(out_fl, "w");
+  fwrite(bin, size, 1, out);
+  fclose(out);
+  free(bin);
+
+  log_inf("Cleaning up...\n");
 asm_write_file_cleanup:
   debug_print_ast(ast);
   for (int i = 0; i < ast.branch_count; i++) {
@@ -693,8 +703,11 @@ asm_write_file_cleanup:
     free(ast.symbols[i].name);
     free(ast.symbols[i].value);
   }
-  free(ast.symbols);
+  if (ast.symbol_count > 0)
+    free(ast.symbols);
   free(ast.branches);
+
+  log_inf("Done!\n");
   return err;
 }
 
