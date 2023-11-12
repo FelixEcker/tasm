@@ -1,7 +1,7 @@
 #ifndef DEBUG_UTILS_H
 #define DEBUG_UTILS_H
 
-//#define DEBUG_UTILS_MUTE
+#define DEBUG_UTILS_MUTE
 
 #include <assembler.h>
 

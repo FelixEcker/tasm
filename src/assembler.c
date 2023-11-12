@@ -5,8 +5,8 @@
 
 #include <assembler.h>
 
-#include <log.h>
 #include <debug_utils.h>
+#include <log.h>
 
 #include <butter/strutils.h>
 
@@ -147,6 +147,28 @@ static void _mod_inst_register(uint8_t *inst, reg_t reg) {
   }
 }
 
+static err_t _get_label_addr(asm_tree_t *ast, char *label, uint16_t *dest) {
+  err_t ret = TASM_INVALID_LABEL;
+  for (size_t b = 0; b < ast->branch_count; b++) {
+    asm_tree_branch_t *branch = &ast->branches[b];
+    for (size_t e = 0; e < branch->exp_count; e++) {
+      asm_exp_t *exp = &branch->asm_exp[e];
+      if (exp->type != EXP_LABEL)
+        continue;
+
+      if (strcmp(exp->parameters[0], label) != 0)
+        continue;
+
+      *dest = exp->lbl_position;
+      ret = TASM_OK;
+      goto _get_label_addr_exit;
+    }
+  }
+
+_get_label_addr_exit:
+  return ret;
+}
+
 static err_t _do_dir_include(asm_tree_t *ast, char **params,
                              size_t param_count) {
   if (param_count < 1)
@@ -222,12 +244,13 @@ err_t asm_parse_symbol(asm_tree_t *ast, char *name, size_t word_count,
   if (ast->symbol_count == 0) {
     ast->symbols = malloc(sizeof(asm_symbol_t));
   } else {
-    ast->symbols = realloc(ast->symbols,
-                           sizeof(asm_symbol_t) * (ast->symbol_count + 1));
+    ast->symbols =
+        realloc(ast->symbols, sizeof(asm_symbol_t) * (ast->symbol_count + 1));
   }
 
   ast->symbols[ast->symbol_count].name = strdup(name);
-  ast->symbols[ast->symbol_count].value = str_from_strarr(words, word_count, ' '); 
+  ast->symbols[ast->symbol_count].value =
+      str_from_strarr(words, word_count, ' ');
 
   for (size_t i = 0; i < word_count; i++)
     free(words[i]);
@@ -278,6 +301,7 @@ err_t asm_parse_exp(asm_tree_t *ast, char *keyword, size_t param_count,
     branch->asm_exp[branch->exp_count].parameter_count = 1;
     branch->asm_exp[branch->exp_count].parameters = malloc(sizeof(char *));
     branch->asm_exp[branch->exp_count].parameters[0] = strdup(keyword);
+    branch->asm_exp[branch->exp_count].parameters[0][strlen(keyword)-1] = 0;
   } else {
     branch->asm_exp[branch->exp_count].inst = get_inst(keyword);
   }
@@ -448,7 +472,7 @@ err_t asm_resolve_labels(asm_tree_t *ast) {
 
 err_t asm_replace_symbols(asm_tree_t *ast) {
   err_t ret = TASM_OK;
-  
+
   asm_tree_branch_t *branch;
   asm_exp_t *exp;
   for (size_t b = 0; b < ast->branch_count; b++) {
@@ -456,11 +480,11 @@ err_t asm_replace_symbols(asm_tree_t *ast) {
 
     for (size_t e = 0; e < branch->exp_count; e++) {
       exp = &branch->asm_exp[e];
- 
+
       for (size_t p = 0; p < exp->parameter_count; p++) {
         if (exp->parameters[p][0] != TASM_CHAR_SYMBOL_USAGE_PREFIX)
           continue;
-        
+
         char *new_param = _get_symbol(ast, exp->parameters[p] + 1);
 
         if (new_param == NULL) {
@@ -548,9 +572,17 @@ err_t asm_translate_parameters(asm_tree_t *ast, char **params, size_t count,
         _mod_inst_register(dest, reg);
         break;
       }
-    default:
-      
-      return TASM_INVALID_TYPE;
+      break;
+    default:;
+      uint16_t label_address;
+      err_t ret = _get_label_addr(ast, params[p], &label_address);
+      if (ret != TASM_OK)
+        return ret;
+
+      _mod_inst_address(dest);
+      dest[1] = (value & 0xff00) >> 8;
+      dest[2] = value % 0xff;
+      break;
     }
   }
 
@@ -771,6 +803,8 @@ char *asm_errname(err_t err) {
     return "Invalid Register identifier";
   case TASM_INVALID_SYMBOL:
     return "Invalid Symbol / Could Not Resolve";
+  case TASM_INVALID_LABEL:
+    return "Invalid Label";
   default:
     return "Unknown Error";
   }
