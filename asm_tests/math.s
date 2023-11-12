@@ -16,8 +16,6 @@ st a, ?ADDR_DEVICENUM ; Set device number
 ld a, $#feed ; Ready value to be written
 st a, $00ab  ; Store the value to address 0x00ab
 
-ld a, ?AASDASD
-
 brn ENTRY
 
 ENTRY:
