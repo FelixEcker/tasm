@@ -638,9 +638,9 @@ err_t asm_translate_tree(asm_tree_t *ast, uint8_t **dest_ptr, size_t *size) {
       }
 
 #ifndef DEBUG_UTILS_MUTE
-      printf("$%.4zx ", wi);
+      //printf("$%.4zx ", wi);
       for (size_t s = 0; s < cur_size; s++)
-        printf("0x%.2x ", translated[s]);
+        printf("0x%.2x, ", translated[s]);
       printf("\n");
 #endif
 

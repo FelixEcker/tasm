@@ -11,7 +11,7 @@
 
 #define AUTHOR "Marie Eckert"
 
-const char *argp_program_version = "tasm 0.0.0";
+const char *argp_program_version = "tasm 0.1.0 (testing)";
 const char *argp_program_bug_address =
     "https://github.com/FelixEcker/tasm/issues";
 const char description[] = "Assembler for the Theft fantasy cpu\n"
