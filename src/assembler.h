@@ -146,8 +146,8 @@ typedef struct asm_tree_t {
 
 //- Assembling Functions -//
 
-err_t asm_parse_exp(asm_tree_t *ast, char *keyword,
-                    size_t parma_count, char **params, uint32_t line);
+err_t asm_parse_exp(asm_tree_t *ast, char *keyword, size_t param_count,
+                    char **params, uint32_t line);
 
 err_t asm_parse_line(asm_tree_t *ast, char *line, uint32_t line_num);
 

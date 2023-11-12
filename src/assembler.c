@@ -301,7 +301,7 @@ err_t asm_parse_exp(asm_tree_t *ast, char *keyword, size_t param_count,
     branch->asm_exp[branch->exp_count].parameter_count = 1;
     branch->asm_exp[branch->exp_count].parameters = malloc(sizeof(char *));
     branch->asm_exp[branch->exp_count].parameters[0] = strdup(keyword);
-    branch->asm_exp[branch->exp_count].parameters[0][strlen(keyword)-1] = 0;
+    branch->asm_exp[branch->exp_count].parameters[0][strlen(keyword) - 1] = 0;
   } else {
     branch->asm_exp[branch->exp_count].inst = get_inst(keyword);
   }

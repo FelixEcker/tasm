@@ -6,14 +6,15 @@
 
 void debug_print_ast(asm_tree_t ast) {
 #ifndef DEBUG_UTILS_MUTE
-  printf("symbols: %zu\nbranches: %zu\n{\n", ast.symbol_count, ast.branch_count);
+  printf("symbols: %zu\nbranches: %zu\n{\n", ast.symbol_count,
+         ast.branch_count);
   for (size_t s = 0; s < ast.symbol_count; s++) {
     printf("  symbol {\n");
     printf("    name: %s;\n", ast.symbols[s].name);
     printf("    value: %s;\n", ast.symbols[s].value);
     printf("  }\n");
   }
-  
+
   printf("  base {\n");
 
   for (size_t s = 0; s < ast.branch_count; s++) {

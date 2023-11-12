@@ -311,6 +311,6 @@ char *str_from_strarr(char **strarr, size_t strc, char seperator) {
     out[offs] = seperator;
   }
 
-  strcpy(out + offs, strarr[strc-1]);
+  strcpy(out + offs, strarr[strc - 1]);
   return out;
 }
