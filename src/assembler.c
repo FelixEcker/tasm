@@ -680,9 +680,6 @@ err_t asm_write_file(char *src_fl, char *out_fl, char *format) {
     goto asm_write_file_cleanup;
   }
 
-  for (size_t s = 0; s < size; s++)
-    printf("%.2x ", bin[s]);
-
   log_inf("Step 3: Writing %d bytes to \"%s\"\n", size, out_fl);
 
   FILE *out = fopen(out_fl, "w");
